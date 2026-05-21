@@ -13,7 +13,7 @@ let currentPage = 1;
 const PAGE_SIZE = 25;
 
 /* ============================================================
-   SAFE ELEMENT HELPER
+   SAFE ELEMENT
 ============================================================ */
 
 function el(id) {
@@ -21,7 +21,7 @@ function el(id) {
 }
 
 /* ============================================================
-   START AFTER DOM LOAD
+   INIT
 ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -71,11 +71,14 @@ function setupDragDrop() {
   if (!uploadCard) return;
 
   uploadCard.addEventListener('dragover', e => {
+
     e.preventDefault();
+
     uploadCard.classList.add('drag-over');
   });
 
   uploadCard.addEventListener('dragleave', () => {
+
     uploadCard.classList.remove('drag-over');
   });
 
@@ -181,7 +184,8 @@ function parseWorkbook(workbook, fileName) {
       defval: ''
     });
 
-  allColumns = Object.keys(rawData[0] || {});
+  allColumns =
+    Object.keys(rawData[0] || {});
 
   filteredData = [...rawData];
 
@@ -198,6 +202,7 @@ function parseWorkbook(workbook, fileName) {
     const span = lu.querySelector('span');
 
     if (span) {
+
       span.textContent =
         `Loaded: ${fileName} · ${rawData.length} rows`;
     }
@@ -238,16 +243,26 @@ function pct(num, den) {
   );
 }
 
+/* ============================================================
+   GET VALUE FROM COLUMN
+============================================================ */
+
 function getValue(row, possibleNames) {
 
   for (const key of Object.keys(row)) {
 
-    const lower = key.toLowerCase();
+    const lowerKey =
+      key.toLowerCase().trim();
 
     for (const name of possibleNames) {
 
-      if (lower.includes(name.toLowerCase())) {
-        return row[key];
+      if (
+        lowerKey.includes(
+          name.toLowerCase()
+        )
+      ) {
+
+        return normalizeVal(row[key]);
       }
     }
   }
@@ -287,18 +302,26 @@ function isReRegDone(row) {
 
 function getIAStatus(row) {
 
-  const ia = String(
-    getValue(row, ['sem 1 ia', 'ia'])
+  const iaValue = String(
+    getValue(row, [
+      'sem 1 ia',
+      'ia status',
+      'ia'
+    ])
   ).toLowerCase();
 
-  if (ia.includes('partial'))
+  if (
+    iaValue.includes('partial')
+  ) {
     return 'PARTIAL';
+  }
 
   if (
-    ia.includes('nil') ||
-    ia.includes('not submitted')
-  )
+    iaValue.includes('nil') ||
+    iaValue.includes('not submitted')
+  ) {
     return 'NIL';
+  }
 
   return 'SUBMITTED';
 }
@@ -311,27 +334,41 @@ function populateFilters() {
 
   populateSelect(
     'filterBatch',
-    getUniqueValues(['batch'])
+    getUniqueValues([
+      'batch'
+    ])
   );
 
   populateSelect(
     'filterProgram',
-    getUniqueValues(['program'])
+    getUniqueValues([
+      'program'
+    ])
   );
 
   populateSelect(
     'filterSource',
-    getUniqueValues(['source'])
+    getUniqueValues([
+      'source'
+    ])
   );
 
   populateSelect(
     'filterSalesType',
-    getUniqueValues(['sales type'])
+    getUniqueValues([
+      'sales type'
+    ])
   );
+
+  /* UGC FIX */
 
   populateSelect(
     'filterUGC',
-    getUniqueValues(['ugc'])
+    getUniqueValues([
+      'ugc included',
+      'ugc',
+      'is ugc'
+    ])
   );
 }
 
@@ -342,7 +379,9 @@ function getUniqueValues(names) {
   rawData.forEach(row => {
 
     const value =
-      normalizeVal(getValue(row, names));
+      normalizeVal(
+        getValue(row, names)
+      );
 
     if (value) {
       values.push(value);
@@ -403,56 +442,74 @@ function applyFilters() {
       el('filterStatus')?.value || 'ALL';
 
     const search =
-      (el('searchInput')?.value || '')
-        .toLowerCase();
+      (
+        el('searchInput')?.value || ''
+      ).toLowerCase();
 
     if (
       batch !== 'ALL' &&
       getValue(row, ['batch']) !== batch
-    )
+    ) {
       return false;
+    }
 
     if (
       program !== 'ALL' &&
       getValue(row, ['program']) !== program
-    )
+    ) {
       return false;
+    }
 
     if (
       source !== 'ALL' &&
       getValue(row, ['source']) !== source
-    )
+    ) {
       return false;
+    }
 
     if (
       sales !== 'ALL' &&
       getValue(row, ['sales type']) !== sales
-    )
+    ) {
       return false;
+    }
+
+    /* UGC FIX */
+
+    const ugcValue =
+      getValue(row, [
+        'ugc included',
+        'ugc',
+        'is ugc'
+      ]);
 
     if (
       ugc !== 'ALL' &&
-      getValue(row, ['ugc']) !== ugc
-    )
+      ugcValue !== ugc
+    ) {
       return false;
+    }
 
     if (
       iaStatus !== 'ALL' &&
       getIAStatus(row) !== iaStatus
-    )
+    ) {
       return false;
+    }
 
     if (
       status === 'DONE' &&
       !isReRegDone(row)
-    )
+    ) {
       return false;
+    }
 
     if (
       status === 'PENDING' &&
       isReRegDone(row)
-    )
+    ) {
       return false;
+    }
 
     if (search) {
 
@@ -461,18 +518,23 @@ function applyFilters() {
           .join(' ')
           .toLowerCase();
 
-      if (!rowText.includes(search))
+      if (
+        !rowText.includes(search)
+      ) {
         return false;
+      }
     }
 
     return true;
   });
 
+  currentPage = 1;
+
   renderDashboard();
 }
 
 /* ============================================================
-   RESET
+   RESET FILTERS
 ============================================================ */
 
 function resetFilters() {
@@ -526,12 +588,16 @@ function renderDashboard() {
 
 function renderKPIs() {
 
-  const total = filteredData.length;
+  const total =
+    filteredData.length;
 
   const done =
-    filteredData.filter(isReRegDone).length;
+    filteredData.filter(
+      isReRegDone
+    ).length;
 
-  const pending = total - done;
+  const pending =
+    total - done;
 
   const grid = el('kpiGrid');
 
@@ -540,23 +606,39 @@ function renderKPIs() {
   grid.innerHTML = `
 
     <div class="kpi-card">
-      <div class="kpi-label">Total Students</div>
-      <div class="kpi-value">${total}</div>
+      <div class="kpi-label">
+        Total Students
+      </div>
+      <div class="kpi-value">
+        ${total}
+      </div>
     </div>
 
     <div class="kpi-card">
-      <div class="kpi-label">Re-Reg Done</div>
-      <div class="kpi-value">${done}</div>
+      <div class="kpi-label">
+        Re-Reg Done
+      </div>
+      <div class="kpi-value">
+        ${done}
+      </div>
     </div>
 
     <div class="kpi-card">
-      <div class="kpi-label">Pending</div>
-      <div class="kpi-value">${pending}</div>
+      <div class="kpi-label">
+        Pending
+      </div>
+      <div class="kpi-value">
+        ${pending}
+      </div>
     </div>
 
     <div class="kpi-card">
-      <div class="kpi-label">Completion %</div>
-      <div class="kpi-value">${pct(done, total)}%</div>
+      <div class="kpi-label">
+        Completion %
+      </div>
+      <div class="kpi-value">
+        ${pct(done, total)}%
+      </div>
     </div>
   `;
 }
@@ -567,7 +649,8 @@ function renderKPIs() {
 
 function renderBatchSummary() {
 
-  const body = el('batchSummaryBody');
+  const body =
+    el('batchSummaryBody');
 
   if (!body) return;
 
@@ -576,7 +659,8 @@ function renderBatchSummary() {
   filteredData.forEach(row => {
 
     const batch =
-      getValue(row, ['batch']) || 'Unknown';
+      getValue(row, ['batch']) ||
+      'Unknown';
 
     if (!groups[batch]) {
       groups[batch] = [];
@@ -591,51 +675,11 @@ function renderBatchSummary() {
 
     const rows = groups[batch];
 
-    const total = rows.length;
-
-    const done =
-      rows.filter(isReRegDone).length;
-
-    const pending = total - done;
-
-    const submitted =
-      rows.filter(r =>
-        getIAStatus(r) === 'SUBMITTED'
-      ).length;
-
-    const partial =
-      rows.filter(r =>
-        getIAStatus(r) === 'PARTIAL'
-      ).length;
-
-    const nil =
-      rows.filter(r =>
-        getIAStatus(r) === 'NIL'
-      ).length;
-
-    const tr =
-      document.createElement('tr');
-
-    tr.innerHTML = `
-      <td>${batch}</td>
-      <td>${total}</td>
-      <td>${done}</td>
-      <td>${pending}</td>
-      <td>${pct(done, total)}%</td>
-      <td>${submitted} (${pct(submitted, total)}%)</td>
-      <td>${partial} (${pct(partial, total)}%)</td>
-      <td>${nil} (${pct(nil, total)}%)</td>
-      <td>${pct(submitted, total)}%</td>
-      <td>
-        ${
-          pct(done, total) >= 75
-            ? 'Good'
-            : 'Needs Attention'
-        }
-      </td>
-    `;
-
-    body.appendChild(tr);
+    renderSummaryRow(
+      body,
+      batch,
+      rows
+    );
   });
 }
 
@@ -671,52 +715,93 @@ function renderProgramSummary() {
 
     const rows = groups[program];
 
-    const total = rows.length;
-
-    const done =
-      rows.filter(isReRegDone).length;
-
-    const pending = total - done;
-
-    const submitted =
-      rows.filter(r =>
-        getIAStatus(r) === 'SUBMITTED'
-      ).length;
-
-    const partial =
-      rows.filter(r =>
-        getIAStatus(r) === 'PARTIAL'
-      ).length;
-
-    const nil =
-      rows.filter(r =>
-        getIAStatus(r) === 'NIL'
-      ).length;
-
-    const tr =
-      document.createElement('tr');
-
-    tr.innerHTML = `
-      <td>${program}</td>
-      <td>${total}</td>
-      <td>${done}</td>
-      <td>${pending}</td>
-      <td>${pct(done, total)}%</td>
-      <td>${submitted} (${pct(submitted, total)}%)</td>
-      <td>${partial} (${pct(partial, total)}%)</td>
-      <td>${nil} (${pct(nil, total)}%)</td>
-      <td>${pct(submitted, total)}%</td>
-      <td>
-        ${
-          pct(done, total) >= 75
-            ? 'Good'
-            : 'Needs Attention'
-        }
-      </td>
-    `;
-
-    body.appendChild(tr);
+    renderSummaryRow(
+      body,
+      program,
+      rows
+    );
   });
+}
+
+/* ============================================================
+   SUMMARY ROW
+============================================================ */
+
+function renderSummaryRow(
+  body,
+  label,
+  rows
+) {
+
+  const total = rows.length;
+
+  const done =
+    rows.filter(
+      isReRegDone
+    ).length;
+
+  const pending =
+    total - done;
+
+  const submitted =
+    rows.filter(r =>
+      getIAStatus(r) === 'SUBMITTED'
+    ).length;
+
+  const partial =
+    rows.filter(r =>
+      getIAStatus(r) === 'PARTIAL'
+    ).length;
+
+  const nil =
+    rows.filter(r =>
+      getIAStatus(r) === 'NIL'
+    ).length;
+
+  const tr =
+    document.createElement('tr');
+
+  tr.innerHTML = `
+
+    <td>${label}</td>
+
+    <td>${total}</td>
+
+    <td>${done}</td>
+
+    <td>${pending}</td>
+
+    <td>${pct(done, total)}%</td>
+
+    <td>
+      ${submitted}
+      (${pct(submitted, total)}%)
+    </td>
+
+    <td>
+      ${partial}
+      (${pct(partial, total)}%)
+    </td>
+
+    <td>
+      ${nil}
+      (${pct(nil, total)}%)
+    </td>
+
+    <td>
+      ${pct(submitted, total)}%
+    </td>
+
+    <td>
+      ${
+        pct(done, total) >= 75
+          ? 'Good'
+          : 'Needs Attention'
+      }
+    </td>
+  `;
+
+  body.appendChild(tr);
 }
 
 /* ============================================================
@@ -739,56 +824,62 @@ function renderCharts() {
 
   destroyCharts();
 
-  const batchGroups = {};
+  const groups = {};
 
   filteredData.forEach(row => {
 
     const batch =
-      getValue(row, ['batch']) || 'Unknown';
+      getValue(row, ['batch']) ||
+      'Unknown';
 
-    if (!batchGroups[batch]) {
-      batchGroups[batch] = [];
+    if (!groups[batch]) {
+      groups[batch] = [];
     }
 
-    batchGroups[batch].push(row);
+    groups[batch].push(row);
   });
 
   const labels =
-    Object.keys(batchGroups);
+    Object.keys(groups);
 
-  const reRegPercentages = [];
-  const iaPercentages = [];
+  const reRegData = [];
+  const iaData = [];
   const doneData = [];
   const pendingData = [];
 
   labels.forEach(batch => {
 
-    const rows = batchGroups[batch];
+    const rows = groups[batch];
 
-    const total = rows.length;
+    const total =
+      rows.length;
 
     const done =
-      rows.filter(isReRegDone).length;
+      rows.filter(
+        isReRegDone
+      ).length;
 
     const submitted =
       rows.filter(r =>
         getIAStatus(r) === 'SUBMITTED'
       ).length;
 
-    reRegPercentages.push(
+    reRegData.push(
       pct(done, total)
     );
 
-    iaPercentages.push(
+    iaData.push(
       pct(submitted, total)
     );
 
     doneData.push(done);
 
-    pendingData.push(total - done);
+    pendingData.push(
+      total - done
+    );
   });
 
-  /* Re-Reg Chart */
+  /* RE-REG BAR */
 
   const reRegCanvas =
     el('reRegBarChart');
@@ -803,14 +894,26 @@ function renderCharts() {
           labels,
           datasets: [{
             label: 'Re-Reg %',
-            data: reRegPercentages
+            data: reRegData,
+            backgroundColor:
+              '#4f46e5'
           }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100
+            }
+          }
         }
       }
     );
   }
 
-  /* IA Chart */
+  /* IA BAR */
 
   const iaCanvas =
     el('iaBarChart');
@@ -825,14 +928,26 @@ function renderCharts() {
           labels,
           datasets: [{
             label: 'IA %',
-            data: iaPercentages
+            data: iaData,
+            backgroundColor:
+              '#10b981'
           }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100
+            }
+          }
         }
       }
     );
   }
 
-  /* Pie */
+  /* PIE */
 
   const pieCanvas =
     el('reRegPieChart');
@@ -840,7 +955,9 @@ function renderCharts() {
   if (pieCanvas) {
 
     const done =
-      filteredData.filter(isReRegDone).length;
+      filteredData.filter(
+        isReRegDone
+      ).length;
 
     const pending =
       filteredData.length - done;
@@ -850,41 +967,73 @@ function renderCharts() {
       {
         type: 'doughnut',
         data: {
-          labels: ['Done', 'Pending'],
+          labels: [
+            'Done',
+            'Pending'
+          ],
           datasets: [{
-            data: [done, pending]
+            data: [
+              done,
+              pending
+            ],
+            backgroundColor: [
+              '#10b981',
+              '#ef4444'
+            ]
           }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
         }
       }
     );
   }
 
-  /* Stacked */
+  /* STACKED */
 
   const stackedCanvas =
     el('stackedBarChart');
 
   if (stackedCanvas) {
 
-    charts.stacked = new Chart(
-      stackedCanvas,
-      {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: 'Done',
-              data: doneData
-            },
-            {
-              label: 'Pending',
-              data: pendingData
+    charts.stacked =
+      new Chart(
+        stackedCanvas,
+        {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: 'Done',
+                data: doneData,
+                backgroundColor:
+                  '#10b981'
+              },
+              {
+                label: 'Pending',
+                data: pendingData,
+                backgroundColor:
+                  '#ef4444'
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                stacked: true
+              },
+              y: {
+                stacked: true,
+                beginAtZero: true
+              }
             }
-          ]
+          }
         }
-      }
-    );
+      );
   }
 }
 
@@ -900,6 +1049,9 @@ function renderDetailTable() {
   const body =
     el('detailTableBody');
 
+  const meta =
+    el('tableMeta');
+
   if (!head || !body) return;
 
   head.innerHTML =
@@ -909,18 +1061,44 @@ function renderDetailTable() {
     ).join('') +
     '</tr>';
 
+  const start =
+    (currentPage - 1) *
+    PAGE_SIZE;
+
+  const end =
+    start + PAGE_SIZE;
+
+  const pageData =
+    filteredData.slice(start, end);
+
   body.innerHTML =
-    filteredData.slice(0, PAGE_SIZE)
-    .map(row => {
+    pageData.map(row => {
 
       return `
         <tr>
-          ${allColumns.map(col =>
-            `<td>${normalizeVal(row[col])}</td>`
-          ).join('')}
+          ${allColumns.map(col => `
+            <td>
+              ${normalizeVal(row[col])}
+            </td>
+          `).join('')}
         </tr>
       `;
     }).join('');
+
+  if (meta) {
+
+    meta.textContent =
+      `Showing ${
+        start + 1
+      } - ${
+        Math.min(
+          end,
+          filteredData.length
+        )
+      } of ${
+        filteredData.length
+      }`;
+  }
 }
 
 /* ============================================================
@@ -930,7 +1108,9 @@ function renderDetailTable() {
 function exportFilteredData() {
 
   const ws =
-    XLSX.utils.json_to_sheet(filteredData);
+    XLSX.utils.json_to_sheet(
+      filteredData
+    );
 
   const wb =
     XLSX.utils.book_new();
