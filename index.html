@@ -3,6 +3,7 @@
 <head>
 
   <meta charset="UTF-8" />
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0"
@@ -52,10 +53,15 @@
         </div>
 
         <div class="brand-text">
-          <h1>Re-Registration Dashboard</h1>
+
+          <h1>
+            Re-Registration Dashboard
+          </h1>
+
           <span>
             Semester 1 → Semester 2 Transition Analytics
           </span>
+
         </div>
 
       </div>
@@ -94,7 +100,7 @@
   </header>
 
   <!-- =======================================================
-       UPLOAD ZONE
+       UPLOAD SECTION
   ======================================================== -->
 
   <main
@@ -133,7 +139,10 @@
         id="dropArea">
 
         <i class="fas fa-cloud-upload-alt"></i>
-        <span>Drag & Drop Excel Here</span>
+
+        <span>
+          Drag & Drop Excel Here
+        </span>
 
       </div>
 
@@ -151,7 +160,7 @@
   </main>
 
   <!-- =======================================================
-       LOADING SCREEN
+       LOADING
   ======================================================== -->
 
   <div
@@ -197,9 +206,11 @@
           </label>
 
           <select id="filterBatch">
+
             <option value="ALL">
               All Batches
             </option>
+
           </select>
 
         </div>
@@ -213,9 +224,11 @@
           </label>
 
           <select id="filterProgram">
+
             <option value="ALL">
               All Programs
             </option>
+
           </select>
 
         </div>
@@ -229,9 +242,11 @@
           </label>
 
           <select id="filterSource">
+
             <option value="ALL">
               All Sources
             </option>
+
           </select>
 
         </div>
@@ -245,9 +260,11 @@
           </label>
 
           <select id="filterSalesType">
+
             <option value="ALL">
               All Sales Types
             </option>
+
           </select>
 
         </div>
@@ -261,19 +278,51 @@
           </label>
 
           <select id="filterUGC">
+
             <option value="ALL">
               All UGC
             </option>
+
           </select>
 
         </div>
 
-        <!-- Status -->
+        <!-- IA Status -->
+        <div class="filter-group">
+
+          <label>
+            <i class="fas fa-file-alt"></i>
+            IA Status
+          </label>
+
+          <select id="filterIAStatus">
+
+            <option value="ALL">
+              All IA Status
+            </option>
+
+            <option value="SUBMITTED">
+              Submitted
+            </option>
+
+            <option value="PARTIAL">
+              Partially Submitted
+            </option>
+
+            <option value="NIL">
+              Nil Submission
+            </option>
+
+          </select>
+
+        </div>
+
+        <!-- Re-Reg Status -->
         <div class="filter-group">
 
           <label>
             <i class="fas fa-check-circle"></i>
-            Status
+            Re-Reg Status
           </label>
 
           <select id="filterStatus">
@@ -305,7 +354,7 @@
           <input
             type="text"
             id="searchInput"
-            placeholder="Search student / batch / source..."
+            placeholder="Search student / batch / program..."
           />
 
         </div>
@@ -325,7 +374,7 @@
     </section>
 
     <!-- ===================================================
-         KPI SECTION
+         KPI CARDS
     ==================================================== -->
 
     <section class="section-block">
@@ -371,13 +420,17 @@
             <tr>
 
               <th>Batch</th>
-              <th>Program</th>
               <th>Total Students</th>
               <th>Re-Reg Done</th>
               <th>Pending</th>
               <th>Re-Reg %</th>
+
               <th>IA Submitted</th>
+              <th>IA Partial</th>
+              <th>IA Nil</th>
+
               <th>IA %</th>
+
               <th>Status</th>
 
             </tr>
@@ -402,7 +455,7 @@
 
       <div class="charts-row">
 
-        <!-- Bar -->
+        <!-- Re-Reg Bar -->
         <div class="chart-card">
 
           <div class="chart-title">
@@ -503,7 +556,7 @@
     </section>
 
     <!-- ===================================================
-         PROGRAM SUMMARY
+         PROGRAM SUMMARY TABLE
     ==================================================== -->
 
     <section class="section-block">
@@ -516,9 +569,39 @@
 
       </div>
 
-      <div
-        class="kpi-grid"
-        id="programGrid">
+      <div class="table-responsive">
+
+        <table
+          class="data-table"
+          id="programSummaryTable">
+
+          <thead>
+
+            <tr>
+
+              <th>Program</th>
+              <th>Total Students</th>
+              <th>Re-Reg Done</th>
+              <th>Pending</th>
+              <th>Re-Reg %</th>
+
+              <th>IA Submitted</th>
+              <th>IA Partial</th>
+              <th>IA Nil</th>
+
+              <th>IA %</th>
+
+              <th>Status</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody id="programSummaryBody">
+
+          </tbody>
+
+        </table>
 
       </div>
 
@@ -564,13 +647,9 @@
           class="data-table"
           id="detailTable">
 
-          <thead id="detailTableHead">
+          <thead id="detailTableHead"></thead>
 
-          </thead>
-
-          <tbody id="detailTableBody">
-
-          </tbody>
+          <tbody id="detailTableBody"></tbody>
 
         </table>
 
