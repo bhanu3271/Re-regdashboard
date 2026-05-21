@@ -1,6 +1,6 @@
 /* ============================================================
-   RE-REGISTRATION DASHBOARD — FINAL SCRIPT
-   ============================================================ */
+   RE-REGISTRATION DASHBOARD — UPDATED FINAL SCRIPT
+============================================================ */
 
 'use strict';
 
@@ -28,11 +28,14 @@ const uploadCard =
   document.querySelector('.upload-card');
 
 uploadCard.addEventListener('dragover', e => {
+
   e.preventDefault();
+
   uploadCard.classList.add('drag-over');
 });
 
 uploadCard.addEventListener('dragleave', () => {
+
   uploadCard.classList.remove('drag-over');
 });
 
@@ -60,7 +63,7 @@ function processFile(file) {
 
   const reader = new FileReader();
 
-  reader.onload = function(e) {
+  reader.onload = function (e) {
 
     try {
 
@@ -74,6 +77,8 @@ function processFile(file) {
       parseWorkbook(workbook, file.name);
 
     } catch (err) {
+
+      console.error(err);
 
       showLoading(false);
 
@@ -127,6 +132,15 @@ function parseWorkbook(workbook, fileName) {
       defval: ''
     });
 
+  if (!rawData.length) {
+
+    alert('Sheet is empty');
+
+    showLoading(false);
+
+    return;
+  }
+
   allColumns = Object.keys(rawData[0]);
 
   filteredData = [...rawData];
@@ -135,14 +149,25 @@ function parseWorkbook(workbook, fileName) {
 
   renderDashboard();
 
-  // last updated
+  /* LAST UPDATED */
+
   const lu =
     document.getElementById('lastUpdated');
 
-  lu.classList.remove('hidden');
+  if (lu) {
 
-  lu.querySelector('span').textContent =
-    `Loaded: ${fileName} · ${rawData.length} rows`;
+    lu.classList.remove('hidden');
+
+    const span = lu.querySelector('span');
+
+    if (span) {
+
+      span.textContent =
+        `Loaded: ${fileName} · ${rawData.length} rows`;
+    }
+  }
+
+  /* SHOW DASHBOARD */
 
   document
     .getElementById('uploadZone')
@@ -167,9 +192,30 @@ function normalizeVal(val) {
   return String(val).trim();
 }
 
+function getColumnValue(row, keywords) {
+
+  for (const col of allColumns) {
+
+    const lower =
+      col.toLowerCase();
+
+    const matched =
+      keywords.some(k =>
+        lower.includes(k)
+      );
+
+    if (matched) {
+
+      return normalizeVal(row[col]);
+    }
+  }
+
+  return '';
+}
+
 /* ============================================================
-   IMPORTANT:
-   Re-Reg Status from LAST COLUMN ONLY
+   RE-REG STATUS
+   LAST COLUMN ONLY
 ============================================================ */
 
 function isReRegDone(row) {
@@ -201,7 +247,9 @@ function pct(num, den) {
 
   if (!den) return 0;
 
-  return Math.round((num / den) * 1000) / 10;
+  return Math.round(
+    (num / den) * 1000
+  ) / 10;
 }
 
 /* ============================================================
@@ -210,73 +258,129 @@ function pct(num, den) {
 
 function populateFilters() {
 
-  const batchSel =
-    document.getElementById('filterBatch');
+  populateSingleFilter(
+    'filterBatch',
+    ['batch']
+  );
 
-  const programSel =
-    document.getElementById('filterProgram');
+  populateSingleFilter(
+    'filterProgram',
+    ['program']
+  );
 
-  const batches = [
+  populateSingleFilter(
+    'filterSource',
+    ['source']
+  );
+
+  populateSingleFilter(
+    'filterSalesType',
+    ['sales type', 'salestype']
+  );
+
+  populateSingleFilter(
+    'filterUGC',
+    ['ugc']
+  );
+}
+
+function populateSingleFilter(id, keywords) {
+
+  const select =
+    document.getElementById(id);
+
+  if (!select) return;
+
+  const values = [
     ...new Set(
-      rawData.map(r => r.Batch).filter(Boolean)
+      rawData
+        .map(r =>
+          getColumnValue(r, keywords)
+        )
+        .filter(Boolean)
     )
   ];
 
-  const programs = [
-    ...new Set(
-      rawData.map(r => r.Program).filter(Boolean)
-    )
-  ];
+  values.sort();
 
-  batches.sort().forEach(b => {
+  values.forEach(v => {
 
     const opt =
       document.createElement('option');
 
-    opt.value = b;
-    opt.textContent = b;
+    opt.value = v;
 
-    batchSel.appendChild(opt);
-  });
+    opt.textContent = v;
 
-  programs.sort().forEach(p => {
-
-    const opt =
-      document.createElement('option');
-
-    opt.value = p;
-    opt.textContent = p;
-
-    programSel.appendChild(opt);
+    select.appendChild(opt);
   });
 }
 
 function applyFilters() {
 
   const batch =
-    document.getElementById('filterBatch').value;
+    document.getElementById('filterBatch')?.value || 'ALL';
 
   const program =
-    document.getElementById('filterProgram').value;
+    document.getElementById('filterProgram')?.value || 'ALL';
+
+  const source =
+    document.getElementById('filterSource')?.value || 'ALL';
+
+  const salesType =
+    document.getElementById('filterSalesType')?.value || 'ALL';
+
+  const ugc =
+    document.getElementById('filterUGC')?.value || 'ALL';
 
   const status =
-    document.getElementById('filterStatus').value;
+    document.getElementById('filterStatus')?.value || 'ALL';
 
   const search =
     document.getElementById('searchInput')
-      .value
-      .toLowerCase();
+      ?.value
+      .toLowerCase() || '';
 
   filteredData = rawData.filter(row => {
 
+    const batchVal =
+      getColumnValue(row, ['batch']);
+
+    const programVal =
+      getColumnValue(row, ['program']);
+
+    const sourceVal =
+      getColumnValue(row, ['source']);
+
+    const salesVal =
+      getColumnValue(row, ['sales type', 'salestype']);
+
+    const ugcVal =
+      getColumnValue(row, ['ugc']);
+
     if (
       batch !== 'ALL' &&
-      row.Batch !== batch
+      batchVal !== batch
     ) return false;
 
     if (
       program !== 'ALL' &&
-      row.Program !== program
+      programVal !== program
+    ) return false;
+
+    if (
+      source !== 'ALL' &&
+      sourceVal !== source
+    ) return false;
+
+    if (
+      salesType !== 'ALL' &&
+      salesVal !== salesType
+    ) return false;
+
+    if (
+      ugc !== 'ALL' &&
+      ugcVal !== ugc
     ) return false;
 
     if (
@@ -291,12 +395,12 @@ function applyFilters() {
 
     if (search) {
 
-      const rowText =
+      const text =
         Object.values(row)
           .join(' ')
           .toLowerCase();
 
-      if (!rowText.includes(search))
+      if (!text.includes(search))
         return false;
     }
 
@@ -310,37 +414,60 @@ function applyFilters() {
 
 function resetFilters() {
 
-  document.getElementById('filterBatch').value =
-    'ALL';
+  [
+    'filterBatch',
+    'filterProgram',
+    'filterSource',
+    'filterSalesType',
+    'filterUGC',
+    'filterStatus'
+  ].forEach(id => {
 
-  document.getElementById('filterProgram').value =
-    'ALL';
+    const el =
+      document.getElementById(id);
 
-  document.getElementById('filterStatus').value =
-    'ALL';
+    if (el) el.value = 'ALL';
+  });
 
-  document.getElementById('searchInput').value =
-    '';
+  const search =
+    document.getElementById('searchInput');
+
+  if (search) search.value = '';
 
   filteredData = [...rawData];
 
   renderDashboard();
 }
 
+/* FILTER EVENTS */
+
 [
   'filterBatch',
   'filterProgram',
+  'filterSource',
+  'filterSalesType',
+  'filterUGC',
   'filterStatus'
 ].forEach(id => {
 
-  document
-    .getElementById(id)
-    .addEventListener('change', applyFilters);
+  const el =
+    document.getElementById(id);
+
+  if (el) {
+
+    el.addEventListener(
+      'change',
+      applyFilters
+    );
+  }
 });
 
 document
   .getElementById('searchInput')
-  .addEventListener('input', applyFilters);
+  ?.addEventListener(
+    'input',
+    applyFilters
+  );
 
 /* ============================================================
    STATS
@@ -368,7 +495,7 @@ function computeStats(data) {
 }
 
 /* ============================================================
-   RENDER DASHBOARD
+   DASHBOARD RENDER
 ============================================================ */
 
 function renderDashboard() {
@@ -379,6 +506,8 @@ function renderDashboard() {
   renderKPIs(stats);
 
   renderCharts(stats);
+
+  renderBatchTable();
 
   renderDetailTable();
 }
@@ -391,6 +520,8 @@ function renderKPIs(stats) {
 
   const grid =
     document.getElementById('kpiGrid');
+
+  if (!grid) return;
 
   grid.innerHTML = `
 
@@ -417,6 +548,76 @@ function renderKPIs(stats) {
 }
 
 /* ============================================================
+   BATCH TABLE
+============================================================ */
+
+function renderBatchTable() {
+
+  const tbody =
+    document.getElementById(
+      'batchSummaryBody'
+    );
+
+  if (!tbody) return;
+
+  const batchMap = {};
+
+  filteredData.forEach(row => {
+
+    const batch =
+      getColumnValue(row, ['batch']) || 'Unknown';
+
+    const program =
+      getColumnValue(row, ['program']) || 'Unknown';
+
+    if (!batchMap[batch]) {
+
+      batchMap[batch] = {
+        batch,
+        program,
+        total: 0,
+        done: 0
+      };
+    }
+
+    batchMap[batch].total++;
+
+    if (isReRegDone(row)) {
+
+      batchMap[batch].done++;
+    }
+  });
+
+  const rows =
+    Object.values(batchMap);
+
+  tbody.innerHTML = rows.map(r => {
+
+    const pending =
+      r.total - r.done;
+
+    const percent =
+      pct(r.done, r.total);
+
+    return `
+      <tr>
+        <td>${r.batch}</td>
+        <td>${r.program}</td>
+        <td>${r.total}</td>
+        <td>${r.done}</td>
+        <td>${pending}</td>
+        <td>${percent}%</td>
+        <td>${r.done}</td>
+        <td>${percent}%</td>
+        <td>
+          ${percent >= 50 ? '✅ Good' : '⚠️ Pending'}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+/* ============================================================
    CHARTS
 ============================================================ */
 
@@ -434,67 +635,182 @@ function renderCharts(stats) {
 
   destroyCharts();
 
-  // Pie Chart
-  const pieCtx =
-    document
-      .getElementById('reRegPieChart')
-      .getContext('2d');
+  /* PIE */
 
-  charts.pie = new Chart(pieCtx, {
+  const pieCanvas =
+    document.getElementById(
+      'reRegPieChart'
+    );
 
-    type: 'doughnut',
+  if (pieCanvas) {
 
-    data: {
+    charts.pie = new Chart(
+      pieCanvas,
+      {
+        type: 'doughnut',
 
-      labels: ['Done', 'Pending'],
+        data: {
 
-      datasets: [{
-        data: [
-          stats.done,
-          stats.pending
-        ],
+          labels: [
+            'Done',
+            'Pending'
+          ],
 
-        backgroundColor: [
-          '#10b981',
-          '#ef4444'
-        ]
-      }]
-    }
-  });
+          datasets: [{
+            data: [
+              stats.done,
+              stats.pending
+            ],
 
-  // Bar Chart
-  const barCtx =
-    document
-      .getElementById('reRegBarChart')
-      .getContext('2d');
-
-  charts.bar = new Chart(barCtx, {
-
-    type: 'bar',
-
-    data: {
-
-      labels: ['Completion'],
-
-      datasets: [{
-
-        label: 'Re-Reg %',
-
-        data: [stats.percent],
-
-        backgroundColor: '#4f46e5'
-      }]
-    },
-
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true,
-          max: 100
+            backgroundColor: [
+              '#10b981',
+              '#ef4444'
+            ]
+          }]
         }
       }
-    }
-  });
+    );
+  }
+
+  /* BAR */
+
+  const barCanvas =
+    document.getElementById(
+      'reRegBarChart'
+    );
+
+  if (barCanvas) {
+
+    charts.bar = new Chart(
+      barCanvas,
+      {
+        type: 'bar',
+
+        data: {
+
+          labels: ['Completion'],
+
+          datasets: [{
+
+            label: 'Re-Reg %',
+
+            data: [stats.percent],
+
+            backgroundColor:
+              '#4f46e5'
+          }]
+        },
+
+        options: {
+
+          responsive: true,
+
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100
+            }
+          }
+        }
+      }
+    );
+  }
+
+  /* IA CHART */
+
+  const iaCanvas =
+    document.getElementById(
+      'iaBarChart'
+    );
+
+  if (iaCanvas) {
+
+    charts.ia = new Chart(
+      iaCanvas,
+      {
+        type: 'bar',
+
+        data: {
+
+          labels: ['IA'],
+
+          datasets: [{
+            label: 'IA %',
+            data: [stats.percent],
+            backgroundColor:
+              '#8b5cf6'
+          }]
+        },
+
+        options: {
+
+          responsive: true,
+
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100
+            }
+          }
+        }
+      }
+    );
+  }
+
+  /* STACKED */
+
+  const stackCanvas =
+    document.getElementById(
+      'stackedBarChart'
+    );
+
+  if (stackCanvas) {
+
+    charts.stack = new Chart(
+      stackCanvas,
+      {
+        type: 'bar',
+
+        data: {
+
+          labels: ['Students'],
+
+          datasets: [
+
+            {
+              label: 'Done',
+              data: [stats.done],
+              backgroundColor:
+                '#10b981'
+            },
+
+            {
+              label: 'Pending',
+              data: [stats.pending],
+              backgroundColor:
+                '#ef4444'
+            }
+          ]
+        },
+
+        options: {
+
+          responsive: true,
+
+          scales: {
+
+            x: {
+              stacked: true
+            },
+
+            y: {
+              stacked: true
+            }
+          }
+        }
+      }
+    );
+  }
 }
 
 /* ============================================================
@@ -504,13 +820,21 @@ function renderCharts(stats) {
 function renderDetailTable() {
 
   const head =
-    document.getElementById('detailTableHead');
+    document.getElementById(
+      'detailTableHead'
+    );
 
   const body =
-    document.getElementById('detailTableBody');
+    document.getElementById(
+      'detailTableBody'
+    );
 
   const meta =
-    document.getElementById('tableMeta');
+    document.getElementById(
+      'tableMeta'
+    );
+
+  if (!head || !body) return;
 
   const start =
     (currentPage - 1) * PAGE_SIZE;
@@ -521,9 +845,12 @@ function renderDetailTable() {
   const page =
     filteredData.slice(start, end);
 
-  meta.textContent =
-    `Showing ${start + 1} - ${Math.min(end, filteredData.length)}
-     of ${filteredData.length}`;
+  if (meta) {
+
+    meta.textContent =
+      `Showing ${start + 1} - ${Math.min(end, filteredData.length)}
+       of ${filteredData.length}`;
+  }
 
   head.innerHTML =
     '<tr>' +
@@ -575,14 +902,18 @@ function renderDetailTable() {
 function exportFilteredData() {
 
   const ws =
-    XLSX.utils.json_to_sheet(filteredData);
+    XLSX.utils.json_to_sheet(
+      filteredData
+    );
 
   const csv =
     XLSX.utils.sheet_to_csv(ws);
 
   const blob = new Blob(
     [csv],
-    { type: 'text/csv' }
+    {
+      type: 'text/csv'
+    }
   );
 
   const url =
@@ -609,5 +940,8 @@ function showLoading(show) {
 
   document
     .getElementById('loadingScreen')
-    .classList.toggle('hidden', !show);
+    ?.classList.toggle(
+      'hidden',
+      !show
+    );
 }
