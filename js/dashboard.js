@@ -327,6 +327,36 @@ function getIAStatus(row) {
 }
 
 /* ============================================================
+   EXAM ATTENDANCE
+============================================================ */
+
+function getExamAttendance(row) {
+
+  const value = String(
+    getValue(row, [
+      'exam attendance',
+      'attendance',
+      'exam status'
+    ])
+  ).toLowerCase();
+
+  if (
+    value.includes('present') ||
+    value.includes('attended')
+  ) {
+    return 'PRESENT';
+  }
+
+  if (
+    value.includes('absent')
+  ) {
+    return 'ABSENT';
+  }
+
+  return 'UNKNOWN';
+}
+
+/* ============================================================
    FILTERS
 ============================================================ */
 
@@ -334,23 +364,17 @@ function populateFilters() {
 
   populateSelect(
     'filterBatch',
-    getUniqueValues([
-      'batch'
-    ])
+    getUniqueValues(['batch'])
   );
 
   populateSelect(
     'filterProgram',
-    getUniqueValues([
-      'program'
-    ])
+    getUniqueValues(['program'])
   );
 
   populateSelect(
     'filterSource',
-    getUniqueValues([
-      'source'
-    ])
+    getUniqueValues(['source'])
   );
 
   populateSelect(
@@ -359,8 +383,6 @@ function populateFilters() {
       'sales type'
     ])
   );
-
-  /* UGC FIX */
 
   populateSelect(
     'filterUGC',
@@ -473,8 +495,6 @@ function applyFilters() {
     ) {
       return false;
     }
-
-    /* UGC FIX */
 
     const ugcValue =
       getValue(row, [
@@ -758,6 +778,11 @@ function renderSummaryRow(
       getIAStatus(r) === 'NIL'
     ).length;
 
+  /* IA FULL = Submitted + Partial */
+
+  const iaFull =
+    submitted + partial;
+
   const tr =
     document.createElement('tr');
 
@@ -789,7 +814,8 @@ function renderSummaryRow(
     </td>
 
     <td>
-      ${pct(submitted, total)}%
+      ${iaFull}
+      (${pct(iaFull, total)}%)
     </td>
 
     <td>
@@ -846,6 +872,7 @@ function renderCharts() {
   const iaData = [];
   const doneData = [];
   const pendingData = [];
+  const attendanceData = [];
 
   labels.forEach(batch => {
 
@@ -864,12 +891,29 @@ function renderCharts() {
         getIAStatus(r) === 'SUBMITTED'
       ).length;
 
+    const partial =
+      rows.filter(r =>
+        getIAStatus(r) === 'PARTIAL'
+      ).length;
+
+    const present =
+      rows.filter(r =>
+        getExamAttendance(r) === 'PRESENT'
+      ).length;
+
+    const iaFull =
+      submitted + partial;
+
     reRegData.push(
       pct(done, total)
     );
 
     iaData.push(
-      pct(submitted, total)
+      pct(iaFull, total)
+    );
+
+    attendanceData.push(
+      pct(present, total)
     );
 
     doneData.push(done);
@@ -879,7 +923,9 @@ function renderCharts() {
     );
   });
 
-  /* RE-REG BAR */
+  /* ============================================================
+     RE-REG BAR
+  ============================================================ */
 
   const reRegCanvas =
     el('reRegBarChart');
@@ -913,7 +959,9 @@ function renderCharts() {
     );
   }
 
-  /* IA BAR */
+  /* ============================================================
+     IA FULL %
+  ============================================================ */
 
   const iaCanvas =
     el('iaBarChart');
@@ -927,7 +975,7 @@ function renderCharts() {
         data: {
           labels,
           datasets: [{
-            label: 'IA %',
+            label: 'IA Full %',
             data: iaData,
             backgroundColor:
               '#10b981'
@@ -947,7 +995,9 @@ function renderCharts() {
     );
   }
 
-  /* PIE */
+  /* ============================================================
+     PIE
+  ============================================================ */
 
   const pieCanvas =
     el('reRegPieChart');
@@ -990,7 +1040,9 @@ function renderCharts() {
     );
   }
 
-  /* STACKED */
+  /* ============================================================
+     STACKED BAR
+  ============================================================ */
 
   const stackedCanvas =
     el('stackedBarChart');
@@ -1031,6 +1083,95 @@ function renderCharts() {
                 beginAtZero: true
               }
             }
+          }
+        }
+      );
+  }
+
+  /* ============================================================
+     EXAM ATTENDANCE CHART
+  ============================================================ */
+
+  const attendanceCanvas =
+    el('attendanceChart');
+
+  if (attendanceCanvas) {
+
+    charts.attendance =
+      new Chart(
+        attendanceCanvas,
+        {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Exam Attendance %',
+              data: attendanceData,
+              borderColor:
+                '#f59e0b',
+              backgroundColor:
+                '#f59e0b'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100
+              }
+            }
+          }
+        }
+      );
+  }
+
+  /* ============================================================
+     SALES TYPE CHART
+  ============================================================ */
+
+  const salesCanvas =
+    el('salesTypeChart');
+
+  if (salesCanvas) {
+
+    const salesGroups = {};
+
+    filteredData.forEach(row => {
+
+      const salesType =
+        getValue(row, [
+          'sales type'
+        ]) || 'Unknown';
+
+      if (!salesGroups[salesType]) {
+        salesGroups[salesType] = 0;
+      }
+
+      salesGroups[salesType]++;
+    });
+
+    charts.sales =
+      new Chart(
+        salesCanvas,
+        {
+          type: 'pie',
+          data: {
+            labels:
+              Object.keys(
+                salesGroups
+              ),
+            datasets: [{
+              data:
+                Object.values(
+                  salesGroups
+                )
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false
           }
         }
       );
