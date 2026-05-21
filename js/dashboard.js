@@ -1,7 +1,3 @@
-/* ============================================================
-   RE-REGISTRATION DASHBOARD — COMPLETE UPDATED SCRIPT
-   ============================================================ */
-
 'use strict';
 
 /* ============================================================
@@ -17,6 +13,31 @@ let currentPage = 1;
 const PAGE_SIZE = 25;
 
 /* ============================================================
+   COLUMN DETECTION
+============================================================ */
+
+function findColumn(possibleNames) {
+
+  return allColumns.find(col => {
+
+    const lower = col.toLowerCase();
+
+    return possibleNames.some(name =>
+      lower.includes(name)
+    );
+  });
+}
+
+function getColumnValue(row, names) {
+
+  const col = findColumn(names);
+
+  if (!col) return '';
+
+  return normalizeVal(row[col]);
+}
+
+/* ============================================================
    FILE HANDLING
 ============================================================ */
 
@@ -24,14 +45,18 @@ document
   .getElementById('fileInput')
   .addEventListener('change', handleFile);
 
-const uploadCard = document.querySelector('.upload-card');
+const uploadCard =
+  document.querySelector('.upload-card');
 
 uploadCard.addEventListener('dragover', e => {
+
   e.preventDefault();
+
   uploadCard.classList.add('drag-over');
 });
 
 uploadCard.addEventListener('dragleave', () => {
+
   uploadCard.classList.remove('drag-over');
 });
 
@@ -76,9 +101,7 @@ function processFile(file) {
 
       showLoading(false);
 
-      alert(
-        'Error reading file: ' + err.message
-      );
+      alert(err.message);
     }
   };
 
@@ -91,14 +114,13 @@ function processFile(file) {
 
 function parseWorkbook(workbook, fileName) {
 
-  rawData = [];
-
   let bestSheet = null;
   let maxRows = 0;
 
   workbook.SheetNames.forEach(name => {
 
-    const sheet = workbook.Sheets[name];
+    const sheet =
+      workbook.Sheets[name];
 
     const json =
       XLSX.utils.sheet_to_json(sheet, {
@@ -112,43 +134,19 @@ function parseWorkbook(workbook, fileName) {
     }
   });
 
-  if (!bestSheet) {
-
-    alert('No data found');
-
-    showLoading(false);
-
-    return;
-  }
-
   rawData =
     XLSX.utils.sheet_to_json(bestSheet, {
       defval: ''
     });
 
-  allColumns = Object.keys(rawData[0]);
+  allColumns =
+    Object.keys(rawData[0]);
 
   filteredData = [...rawData];
 
   populateFilters();
 
   renderDashboard();
-
-  const lu =
-    document.getElementById('lastUpdated');
-
-  if (lu) {
-
-    lu.classList.remove('hidden');
-
-    const span = lu.querySelector('span');
-
-    if (span) {
-
-      span.textContent =
-        `Loaded: ${fileName} · ${rawData.length} rows`;
-    }
-  }
 
   document
     .getElementById('uploadZone')
@@ -167,8 +165,10 @@ function parseWorkbook(workbook, fileName) {
 
 function normalizeVal(val) {
 
-  if (val === null || val === undefined)
-    return '';
+  if (
+    val === null ||
+    val === undefined
+  ) return '';
 
   return String(val).trim();
 }
@@ -177,7 +177,9 @@ function pct(num, den) {
 
   if (!den) return 0;
 
-  return Math.round((num / den) * 1000) / 10;
+  return Math.round(
+    (num / den) * 1000
+  ) / 10;
 }
 
 /* ============================================================
@@ -186,15 +188,13 @@ function pct(num, den) {
 
 function isReRegDone(row) {
 
-  const values = Object.values(row);
+  const values =
+    Object.values(row);
 
-  if (!values.length) return false;
-
-  const lastValue = String(
-    values[values.length - 1] || ''
-  )
-    .trim()
-    .toLowerCase();
+  const last =
+    String(values[values.length - 1] || '')
+      .trim()
+      .toLowerCase();
 
   return [
     'done',
@@ -203,9 +203,9 @@ function isReRegDone(row) {
     'yes',
     'success',
     'registered',
-    'true',
-    '1'
-  ].includes(lastValue);
+    '1',
+    'true'
+  ].includes(last);
 }
 
 /* ============================================================
@@ -214,29 +214,18 @@ function isReRegDone(row) {
 
 function getIAStatus(row) {
 
-  const iaColumn = allColumns.find(col =>
-    col.toLowerCase().includes('sem 1 ia')
-  );
+  const val = getColumnValue(
+    row,
+    ['sem 1 ia', 'ia']
+  ).toLowerCase();
 
-  if (!iaColumn)
-    return 'Nil Submission';
+  if (val.includes('partial'))
+    return 'Partial';
 
-  const value =
-    normalizeVal(row[iaColumn]).toLowerCase();
-
-  if (
-    value.includes('partial')
-  ) {
-    return 'Partially Submitted';
-  }
-
-  if (
-    value.includes('submitted')
-  ) {
+  if (val.includes('submit'))
     return 'Submitted';
-  }
 
-  return 'Nil Submission';
+  return 'Nil';
 }
 
 /* ============================================================
@@ -245,60 +234,81 @@ function getIAStatus(row) {
 
 function populateFilters() {
 
-  const batchSel =
-    document.getElementById('filterBatch');
+  populateFilter(
+    'filterBatch',
+    ['batch']
+  );
 
-  const programSel =
-    document.getElementById('filterProgram');
+  populateFilter(
+    'filterProgram',
+    ['program']
+  );
 
-  batchSel.innerHTML =
-    '<option value="ALL">All Batches</option>';
+  populateFilter(
+    'filterSource',
+    ['source']
+  );
 
-  programSel.innerHTML =
-    '<option value="ALL">All Programs</option>';
+  populateFilter(
+    'filterSalesType',
+    ['sales']
+  );
 
-  const batches = [
+  populateFilter(
+    'filterUGC',
+    ['ugc']
+  );
+}
+
+function populateFilter(id, names) {
+
+  const select =
+    document.getElementById(id);
+
+  if (!select) return;
+
+  select.innerHTML =
+    '<option value="ALL">All</option>';
+
+  const values = [
     ...new Set(
-      rawData.map(r => r.Batch).filter(Boolean)
+      rawData
+        .map(r =>
+          getColumnValue(r, names)
+        )
+        .filter(Boolean)
     )
   ];
 
-  const programs = [
-    ...new Set(
-      rawData.map(r => r.Program).filter(Boolean)
-    )
-  ];
-
-  batches.sort().forEach(b => {
+  values.sort().forEach(v => {
 
     const opt =
       document.createElement('option');
 
-    opt.value = b;
-    opt.textContent = b;
+    opt.value = v;
 
-    batchSel.appendChild(opt);
-  });
+    opt.textContent = v;
 
-  programs.sort().forEach(p => {
-
-    const opt =
-      document.createElement('option');
-
-    opt.value = p;
-    opt.textContent = p;
-
-    programSel.appendChild(opt);
+    select.appendChild(opt);
   });
 }
 
 function applyFilters() {
 
   const batch =
-    document.getElementById('filterBatch').value;
+    document.getElementById('filterBatch')?.value || 'ALL';
 
   const program =
-    document.getElementById('filterProgram').value;
+    document.getElementById('filterProgram')?.value || 'ALL';
+
+  const source =
+    document.getElementById('filterSource')?.value || 'ALL';
+
+  const sales =
+    document.getElementById('filterSalesType')?.value || 'ALL';
+
+  const ugc =
+    document.getElementById('filterUGC')?.value || 'ALL';
 
   const status =
     document.getElementById('filterStatus').value;
@@ -312,12 +322,27 @@ function applyFilters() {
 
     if (
       batch !== 'ALL' &&
-      row.Batch !== batch
+      getColumnValue(row, ['batch']) !== batch
     ) return false;
 
     if (
       program !== 'ALL' &&
-      row.Program !== program
+      getColumnValue(row, ['program']) !== program
+    ) return false;
+
+    if (
+      source !== 'ALL' &&
+      getColumnValue(row, ['source']) !== source
+    ) return false;
+
+    if (
+      sales !== 'ALL' &&
+      getColumnValue(row, ['sales']) !== sales
+    ) return false;
+
+    if (
+      ugc !== 'ALL' &&
+      getColumnValue(row, ['ugc']) !== ugc
     ) return false;
 
     if (
@@ -332,51 +357,44 @@ function applyFilters() {
 
     if (search) {
 
-      const rowText =
+      const txt =
         Object.values(row)
           .join(' ')
           .toLowerCase();
 
-      if (!rowText.includes(search))
+      if (!txt.includes(search))
         return false;
     }
 
     return true;
   });
 
-  currentPage = 1;
-
   renderDashboard();
 }
 
-function resetFilters() {
-
-  document.getElementById('filterBatch').value =
-    'ALL';
-
-  document.getElementById('filterProgram').value =
-    'ALL';
-
-  document.getElementById('filterStatus').value =
-    'ALL';
-
-  document.getElementById('searchInput').value =
-    '';
-
-  filteredData = [...rawData];
-
-  renderDashboard();
-}
+/* ============================================================
+   EVENTS
+============================================================ */
 
 [
   'filterBatch',
   'filterProgram',
-  'filterStatus'
+  'filterStatus',
+  'filterSource',
+  'filterSalesType',
+  'filterUGC'
 ].forEach(id => {
 
-  document
-    .getElementById(id)
-    .addEventListener('change', applyFilters);
+  const el =
+    document.getElementById(id);
+
+  if (el) {
+
+    el.addEventListener(
+      'change',
+      applyFilters
+    );
+  }
 });
 
 document
@@ -387,33 +405,22 @@ document
    STATS
 ============================================================ */
 
-function computeStats(data) {
+function buildSummaryMap(type) {
 
-  const total = data.length;
+  const map = {};
 
-  const done =
-    data.filter(isReRegDone).length;
+  filteredData.forEach(row => {
 
-  const pending =
-    total - done;
+    const key =
+      getColumnValue(
+        row,
+        [type]
+      ) || 'Unknown';
 
-  const percent =
-    pct(done, total);
+    if (!map[key]) {
 
-  const batchMap = {};
-  const programMap = {};
+      map[key] = {
 
-  data.forEach(row => {
-
-    const batch =
-      normalizeVal(row.Batch) || 'Unknown';
-
-    const program =
-      normalizeVal(row.Program) || 'Unknown';
-
-    if (!batchMap[batch]) {
-
-      batchMap[batch] = {
         total: 0,
         done: 0,
         iaSubmitted: 0,
@@ -422,201 +429,136 @@ function computeStats(data) {
       };
     }
 
-    if (!programMap[program]) {
+    map[key].total++;
 
-      programMap[program] = {
-        total: 0,
-        done: 0,
-        iaSubmitted: 0,
-        iaPartial: 0,
-        iaNil: 0
-      };
-    }
+    if (isReRegDone(row))
+      map[key].done++;
 
-    batchMap[batch].total++;
-    programMap[program].total++;
-
-    if (isReRegDone(row)) {
-
-      batchMap[batch].done++;
-      programMap[program].done++;
-    }
-
-    const iaStatus =
+    const ia =
       getIAStatus(row);
 
-    if (iaStatus === 'Submitted') {
+    if (ia === 'Submitted')
+      map[key].iaSubmitted++;
 
-      batchMap[batch].iaSubmitted++;
-      programMap[program].iaSubmitted++;
-    }
-    else if (
-      iaStatus === 'Partially Submitted'
-    ) {
+    else if (ia === 'Partial')
+      map[key].iaPartial++;
 
-      batchMap[batch].iaPartial++;
-      programMap[program].iaPartial++;
-    }
-    else {
-
-      batchMap[batch].iaNil++;
-      programMap[program].iaNil++;
-    }
+    else
+      map[key].iaNil++;
   });
 
-  return {
-    total,
-    done,
-    pending,
-    percent,
-    batchMap,
-    programMap
-  };
+  return map;
 }
 
 /* ============================================================
-   RENDER DASHBOARD
+   RENDER
 ============================================================ */
 
 function renderDashboard() {
 
-  const stats =
-    computeStats(filteredData);
+  const batchMap =
+    buildSummaryMap('batch');
 
-  renderKPIs(stats);
+  const programMap =
+    buildSummaryMap('program');
 
-  renderBatchTable(stats.batchMap);
+  renderBatchTable(batchMap);
 
-  renderProgramTable(stats.programMap);
+  renderProgramTable(programMap);
 
-  renderCharts(stats);
+  renderCharts(batchMap);
 
   renderDetailTable();
-}
-
-/* ============================================================
-   KPI CARDS
-============================================================ */
-
-function renderKPIs(stats) {
-
-  const grid =
-    document.getElementById('kpiGrid');
-
-  grid.innerHTML = `
-
-    <div class="kpi-card">
-      <div class="kpi-label">Total Students</div>
-      <div class="kpi-value">${stats.total}</div>
-    </div>
-
-    <div class="kpi-card">
-      <div class="kpi-label">Re-Reg Done</div>
-      <div class="kpi-value">${stats.done}</div>
-    </div>
-
-    <div class="kpi-card">
-      <div class="kpi-label">Pending</div>
-      <div class="kpi-value">${stats.pending}</div>
-    </div>
-
-    <div class="kpi-card">
-      <div class="kpi-label">Completion %</div>
-      <div class="kpi-value">${stats.percent}%</div>
-    </div>
-  `;
 }
 
 /* ============================================================
    BATCH TABLE
 ============================================================ */
 
-function renderBatchTable(batchMap) {
+function renderBatchTable(map) {
 
-  const tbody =
+  const body =
     document.getElementById(
       'batchSummaryBody'
     );
 
-  if (!tbody) return;
-
   let html = '';
 
-  Object.entries(batchMap).forEach(
-    ([batch, data]) => {
+  Object.entries(map).forEach(
+    ([batch, d]) => {
 
       const pending =
-        data.total - data.done;
+        d.total - d.done;
 
-      const reRegPct =
-        pct(data.done, data.total);
+      const rrPct =
+        pct(d.done, d.total);
 
       const iaPct =
-        pct(data.iaSubmitted, data.total);
+        pct(d.iaSubmitted, d.total);
 
       html += `
         <tr>
           <td>${batch}</td>
-          <td>${data.total}</td>
-          <td>${data.done}</td>
+          <td>${d.total}</td>
+          <td>${d.done}</td>
           <td>${pending}</td>
-          <td>${reRegPct}%</td>
-          <td>${data.iaSubmitted}</td>
+          <td>${rrPct}%</td>
+          <td>${d.iaSubmitted}</td>
           <td>${iaPct}%</td>
-          <td>${data.iaPartial}</td>
-          <td>${data.iaNil}</td>
+          <td>${d.iaPartial}</td>
+          <td>${d.iaNil}</td>
         </tr>
       `;
     }
   );
 
-  tbody.innerHTML = html;
+  body.innerHTML = html;
 }
 
 /* ============================================================
    PROGRAM TABLE
 ============================================================ */
 
-function renderProgramTable(programMap) {
+function renderProgramTable(map) {
 
-  const tbody =
+  const body =
     document.getElementById(
       'programSummaryBody'
     );
 
-  if (!tbody) return;
+  if (!body) return;
 
   let html = '';
 
-  Object.entries(programMap).forEach(
-    ([program, data]) => {
+  Object.entries(map).forEach(
+    ([program, d]) => {
 
       const pending =
-        data.total - data.done;
+        d.total - d.done;
 
-      const reRegPct =
-        pct(data.done, data.total);
+      const rrPct =
+        pct(d.done, d.total);
 
       const iaPct =
-        pct(data.iaSubmitted, data.total);
+        pct(d.iaSubmitted, d.total);
 
       html += `
         <tr>
           <td>${program}</td>
-          <td>${data.total}</td>
-          <td>${data.done}</td>
+          <td>${d.total}</td>
+          <td>${d.done}</td>
           <td>${pending}</td>
-          <td>${reRegPct}%</td>
-          <td>${data.iaSubmitted}</td>
+          <td>${rrPct}%</td>
+          <td>${d.iaSubmitted}</td>
           <td>${iaPct}%</td>
-          <td>${data.iaPartial}</td>
-          <td>${data.iaNil}</td>
+          <td>${d.iaPartial}</td>
+          <td>${d.iaNil}</td>
         </tr>
       `;
     }
   );
 
-  tbody.innerHTML = html;
+  body.innerHTML = html;
 }
 
 /* ============================================================
@@ -633,199 +575,68 @@ function destroyCharts() {
   charts = {};
 }
 
-function renderCharts(stats) {
+function renderCharts(batchMap) {
 
   destroyCharts();
 
-  const batches =
-    Object.keys(stats.batchMap);
+  const labels =
+    Object.keys(batchMap);
 
-  const doneData =
-    batches.map(
-      b => stats.batchMap[b].done
+  const done =
+    labels.map(
+      l => batchMap[l].done
     );
 
-  const pendingData =
-    batches.map(
-      b =>
-        stats.batchMap[b].total -
-        stats.batchMap[b].done
+  const pending =
+    labels.map(
+      l =>
+        batchMap[l].total -
+        batchMap[l].done
     );
 
-  // PIE CHART
+  charts.bar = new Chart(
+    document
+      .getElementById('reRegBarChart')
+      .getContext('2d'),
+    {
+      type: 'bar',
 
-  const pieCanvas =
-    document.getElementById(
-      'reRegPieChart'
-    );
+      data: {
+        labels,
 
-  if (pieCanvas) {
-
-    charts.pie = new Chart(
-      pieCanvas.getContext('2d'),
-      {
-        type: 'doughnut',
-
-        data: {
-          labels: ['Done', 'Pending'],
-
-          datasets: [{
-            data: [
-              stats.done,
-              stats.pending
-            ],
-
-            backgroundColor: [
-              '#10b981',
-              '#ef4444'
-            ]
-          }]
-        }
+        datasets: [{
+          label: 'Done',
+          data: done,
+          backgroundColor: '#4f46e5'
+        }]
       }
-    );
-  }
+    }
+  );
 
-  // BAR CHART
+  charts.pie = new Chart(
+    document
+      .getElementById('reRegPieChart')
+      .getContext('2d'),
+    {
+      type: 'doughnut',
 
-  const barCanvas =
-    document.getElementById(
-      'reRegBarChart'
-    );
+      data: {
+        labels: ['Done', 'Pending'],
 
-  if (barCanvas) {
+        datasets: [{
+          data: [
+            done.reduce((a,b)=>a+b,0),
+            pending.reduce((a,b)=>a+b,0)
+          ],
 
-    charts.bar = new Chart(
-      barCanvas.getContext('2d'),
-      {
-        type: 'bar',
-
-        data: {
-          labels: batches,
-
-          datasets: [{
-            label: 'Re-Reg Done',
-
-            data: doneData,
-
-            backgroundColor:
-              '#4f46e5'
-          }]
-        }
-      }
-    );
-  }
-
-  // STACKED CHART
-
-  const stackedCanvas =
-    document.getElementById(
-      'stackedBarChart'
-    );
-
-  if (stackedCanvas) {
-
-    charts.stacked = new Chart(
-      stackedCanvas.getContext('2d'),
-      {
-        type: 'bar',
-
-        data: {
-          labels: batches,
-
-          datasets: [
-            {
-              label: 'Done',
-
-              data: doneData,
-
-              backgroundColor:
-                '#10b981'
-            },
-            {
-              label: 'Pending',
-
-              data: pendingData,
-
-              backgroundColor:
-                '#ef4444'
-            }
+          backgroundColor: [
+            '#10b981',
+            '#ef4444'
           ]
-        },
-
-        options: {
-          scales: {
-            x: {
-              stacked: true
-            },
-            y: {
-              stacked: true
-            }
-          }
-        }
+        }]
       }
-    );
-  }
-
-  // IA CHART
-
-  const iaCanvas =
-    document.getElementById(
-      'iaBarChart'
-    );
-
-  if (iaCanvas) {
-
-    charts.ia = new Chart(
-      iaCanvas.getContext('2d'),
-      {
-        type: 'bar',
-
-        data: {
-          labels: batches,
-
-          datasets: [
-            {
-              label: 'Submitted',
-
-              data: batches.map(
-                b =>
-                  stats.batchMap[b]
-                    .iaSubmitted
-              ),
-
-              backgroundColor:
-                '#10b981'
-            },
-            {
-              label:
-                'Partially Submitted',
-
-              data: batches.map(
-                b =>
-                  stats.batchMap[b]
-                    .iaPartial
-              ),
-
-              backgroundColor:
-                '#f59e0b'
-            },
-            {
-              label: 'Nil Submission',
-
-              data: batches.map(
-                b =>
-                  stats.batchMap[b]
-                    .iaNil
-              ),
-
-              backgroundColor:
-                '#ef4444'
-            }
-          ]
-        }
-      }
-    );
-  }
+    }
+  );
 }
 
 /* ============================================================
@@ -844,88 +655,35 @@ function renderDetailTable() {
       'detailTableBody'
     );
 
-  const meta =
-    document.getElementById(
-      'tableMeta'
-    );
-
-  const start =
-    (currentPage - 1) * PAGE_SIZE;
-
-  const end =
-    start + PAGE_SIZE;
-
-  const page =
-    filteredData.slice(start, end);
-
-  meta.textContent =
-    `Showing ${start + 1} - ${Math.min(end, filteredData.length)}
-     of ${filteredData.length}`;
-
   head.innerHTML =
     '<tr>' +
     allColumns.map(c =>
       `<th>${c}</th>`
     ).join('') +
-    '<th>IA Status</th></tr>';
+    '</tr>';
 
-  body.innerHTML = page.map(row => {
+  body.innerHTML =
+    filteredData
+      .slice(0, PAGE_SIZE)
+      .map(row => {
 
-    return '<tr>' +
+        return '<tr>' +
 
-      allColumns.map(col => {
+          allColumns.map(col => {
 
-        const val =
-          normalizeVal(row[col]);
+            return `
+              <td>
+                ${normalizeVal(row[col])}
+              </td>
+            `;
 
-        return `<td>${val}</td>`;
+          }).join('')
 
-      }).join('')
+          +
 
-      +
-
-      `<td>${getIAStatus(row)}</td>`
-
-      +
-
-      '</tr>';
-
-  }).join('');
-}
-
-/* ============================================================
-   EXPORT CSV
-============================================================ */
-
-function exportFilteredData() {
-
-  const ws =
-    XLSX.utils.json_to_sheet(
-      filteredData
-    );
-
-  const csv =
-    XLSX.utils.sheet_to_csv(ws);
-
-  const blob = new Blob(
-    [csv],
-    { type: 'text/csv' }
-  );
-
-  const url =
-    URL.createObjectURL(blob);
-
-  const a =
-    document.createElement('a');
-
-  a.href = url;
-
-  a.download =
-    'filtered_data.csv';
-
-  a.click();
-
-  URL.revokeObjectURL(url);
+          '</tr>';
+      })
+      .join('');
 }
 
 /* ============================================================
