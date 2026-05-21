@@ -1,112 +1,375 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Re-Registration Dashboard | Sem 1 → Sem 2</title>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
 
-  <!-- Fonts & Icons -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <title>
+    Re-Registration Dashboard | Sem 1 → Sem 2
+  </title>
 
-  <!-- Libraries -->
+  <!-- Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Font Awesome -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css"
+  />
+
+  <!-- XLSX -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Chart JS -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
+  <!-- Styles -->
   <link rel="stylesheet" href="css/style.css" />
+
 </head>
+
 <body>
 
-  <!-- ===== HEADER ===== -->
+  <!-- =======================================================
+       HEADER
+  ======================================================== -->
+
   <header class="app-header">
+
     <div class="header-inner">
+
       <div class="header-brand">
-        <div class="brand-icon"><i class="fas fa-graduation-cap"></i></div>
+
+        <div class="brand-icon">
+          <i class="fas fa-graduation-cap"></i>
+        </div>
+
         <div class="brand-text">
           <h1>Re-Registration Dashboard</h1>
-          <span>Semester 1 → Semester 2 Transition Analytics</span>
+          <span>
+            Semester 1 → Semester 2 Transition Analytics
+          </span>
         </div>
+
       </div>
+
       <div class="header-actions">
-        <div id="lastUpdated" class="last-updated hidden"><i class="fas fa-clock"></i> <span></span></div>
-        <button class="btn-upload" onclick="document.getElementById('fileInput').click()">
-          <i class="fas fa-upload"></i> Upload Excel
+
+        <div
+          id="lastUpdated"
+          class="last-updated hidden">
+
+          <i class="fas fa-clock"></i>
+          <span></span>
+
+        </div>
+
+        <button
+          class="btn-upload"
+          onclick="document.getElementById('fileInput').click()">
+
+          <i class="fas fa-upload"></i>
+          Upload Excel
+
         </button>
-        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" />
+
+        <input
+          type="file"
+          id="fileInput"
+          accept=".xlsx,.xls"
+          style="display:none"
+        />
+
       </div>
+
     </div>
+
   </header>
 
-  <!-- ===== UPLOAD ZONE ===== -->
-  <main id="uploadZone" class="upload-zone">
+  <!-- =======================================================
+       UPLOAD ZONE
+  ======================================================== -->
+
+  <main
+    id="uploadZone"
+    class="upload-zone">
+
     <div class="upload-card">
-      <div class="upload-icon"><i class="fas fa-file-excel"></i></div>
-      <h2>Upload Re-Reg Dashboard Excel</h2>
-      <p>Drop your <strong>Re-reg Dashboard from Sem1 to Sem2.xlsx</strong> file here or click to browse</p>
-      <label class="upload-btn" for="fileInput">
-        <i class="fas fa-folder-open"></i> Choose Excel File
-      </label>
-      <div class="upload-drop-area" id="dropArea">
-        <i class="fas fa-cloud-upload-alt"></i>
-        <span>or drag & drop here</span>
+
+      <div class="upload-icon">
+        <i class="fas fa-file-excel"></i>
       </div>
-      <p class="upload-hint"><i class="fas fa-info-circle"></i> Supports .xlsx and .xls files · Data stays in your browser</p>
+
+      <h2>
+        Upload Re-Reg Dashboard Excel
+      </h2>
+
+      <p>
+        Upload your
+        <strong>
+          Re-reg Dashboard from Sem1 to Sem2.xlsx
+        </strong>
+        file
+      </p>
+
+      <label
+        class="upload-btn"
+        for="fileInput">
+
+        <i class="fas fa-folder-open"></i>
+        Choose Excel File
+
+      </label>
+
+      <div
+        class="upload-drop-area"
+        id="dropArea">
+
+        <i class="fas fa-cloud-upload-alt"></i>
+        <span>Drag & Drop Excel Here</span>
+
+      </div>
+
+      <p class="upload-hint">
+
+        <i class="fas fa-info-circle"></i>
+
+        Supports .xlsx and .xls files ·
+        Data stays in your browser
+
+      </p>
+
     </div>
+
   </main>
 
-  <!-- ===== LOADING ===== -->
-  <div id="loadingScreen" class="loading-screen hidden">
+  <!-- =======================================================
+       LOADING SCREEN
+  ======================================================== -->
+
+  <div
+    id="loadingScreen"
+    class="loading-screen hidden">
+
     <div class="loader-box">
+
       <div class="spinner"></div>
-      <p>Processing your data…</p>
+
+      <p>
+        Processing Excel Data...
+      </p>
+
     </div>
+
   </div>
 
-  <!-- ===== DASHBOARD ===== -->
-  <div id="dashboard" class="dashboard hidden">
+  <!-- =======================================================
+       DASHBOARD
+  ======================================================== -->
 
-    <!-- Filter Bar -->
-    <section class="filter-bar" id="filterBar">
+  <div
+    id="dashboard"
+    class="dashboard hidden">
+
+    <!-- ===================================================
+         FILTER BAR
+    ==================================================== -->
+
+    <section
+      class="filter-bar"
+      id="filterBar">
+
       <div class="filter-inner">
+
+        <!-- Batch -->
         <div class="filter-group">
-          <label><i class="fas fa-layer-group"></i> Batch</label>
-          <select id="filterBatch"><option value="ALL">All Batches</option></select>
-        </div>
-        <div class="filter-group">
-          <label><i class="fas fa-book"></i> Program</label>
-          <select id="filterProgram"><option value="ALL">All Programs</option></select>
-        </div>
-        <div class="filter-group">
-          <label><i class="fas fa-check-circle"></i> Status</label>
-          <select id="filterStatus">
-            <option value="ALL">All Status</option>
-            <option value="DONE">Re-Reg Done</option>
-            <option value="PENDING">Pending</option>
+
+          <label>
+            <i class="fas fa-layer-group"></i>
+            Batch
+          </label>
+
+          <select id="filterBatch">
+            <option value="ALL">
+              All Batches
+            </option>
           </select>
+
         </div>
+
+        <!-- Program -->
+        <div class="filter-group">
+
+          <label>
+            <i class="fas fa-book"></i>
+            Program
+          </label>
+
+          <select id="filterProgram">
+            <option value="ALL">
+              All Programs
+            </option>
+          </select>
+
+        </div>
+
+        <!-- Source -->
+        <div class="filter-group">
+
+          <label>
+            <i class="fas fa-database"></i>
+            Source
+          </label>
+
+          <select id="filterSource">
+            <option value="ALL">
+              All Sources
+            </option>
+          </select>
+
+        </div>
+
+        <!-- Sales Type -->
+        <div class="filter-group">
+
+          <label>
+            <i class="fas fa-chart-line"></i>
+            Sales Type
+          </label>
+
+          <select id="filterSalesType">
+            <option value="ALL">
+              All Sales Types
+            </option>
+          </select>
+
+        </div>
+
+        <!-- UGC -->
+        <div class="filter-group">
+
+          <label>
+            <i class="fas fa-university"></i>
+            UGC
+          </label>
+
+          <select id="filterUGC">
+            <option value="ALL">
+              All UGC
+            </option>
+          </select>
+
+        </div>
+
+        <!-- Status -->
+        <div class="filter-group">
+
+          <label>
+            <i class="fas fa-check-circle"></i>
+            Status
+          </label>
+
+          <select id="filterStatus">
+
+            <option value="ALL">
+              All Status
+            </option>
+
+            <option value="DONE">
+              Re-Reg Done
+            </option>
+
+            <option value="PENDING">
+              Pending
+            </option>
+
+          </select>
+
+        </div>
+
+        <!-- Search -->
         <div class="filter-group search-group">
-          <label><i class="fas fa-search"></i> Search</label>
-          <input type="text" id="searchInput" placeholder="Search student / batch…" />
+
+          <label>
+            <i class="fas fa-search"></i>
+            Search
+          </label>
+
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search student / batch / source..."
+          />
+
         </div>
-        <button class="btn-reset" onclick="resetFilters()"><i class="fas fa-undo"></i> Reset</button>
+
+        <!-- Reset -->
+        <button
+          class="btn-reset"
+          onclick="resetFilters()">
+
+          <i class="fas fa-undo"></i>
+          Reset
+
+        </button>
+
       </div>
+
     </section>
 
-    <!-- ===== KPI CARDS ===== -->
+    <!-- ===================================================
+         KPI SECTION
+    ==================================================== -->
+
     <section class="section-block">
-      <div class="section-title"><i class="fas fa-tachometer-alt"></i> Key Performance Indicators</div>
-      <div class="kpi-grid" id="kpiGrid">
-        <!-- Populated by JS -->
+
+      <div class="section-title">
+
+        <i class="fas fa-tachometer-alt"></i>
+
+        Key Performance Indicators
+
       </div>
+
+      <div
+        class="kpi-grid"
+        id="kpiGrid">
+
+      </div>
+
     </section>
 
-    <!-- ===== BATCH-WISE KPI TABLE ===== -->
+    <!-- ===================================================
+         BATCH SUMMARY TABLE
+    ==================================================== -->
+
     <section class="section-block">
-      <div class="section-title"><i class="fas fa-table"></i> Batch-wise Re-Registration Summary</div>
+
+      <div class="section-title">
+
+        <i class="fas fa-table"></i>
+
+        Batch-wise Re-Registration Summary
+
+      </div>
+
       <div class="table-responsive">
-        <table class="data-table" id="batchSummaryTable">
+
+        <table
+          class="data-table"
+          id="batchSummaryTable">
+
           <thead>
+
             <tr>
+
               <th>Batch</th>
               <th>Program</th>
               <th>Total Students</th>
@@ -116,71 +379,234 @@
               <th>IA Submitted</th>
               <th>IA %</th>
               <th>Status</th>
+
             </tr>
+
           </thead>
-          <tbody id="batchSummaryBody"></tbody>
+
+          <tbody id="batchSummaryBody">
+
+          </tbody>
+
         </table>
+
       </div>
+
     </section>
 
-    <!-- ===== CHARTS ROW 1 ===== -->
+    <!-- ===================================================
+         CHARTS ROW 1
+    ==================================================== -->
+
     <section class="section-block">
+
       <div class="charts-row">
+
+        <!-- Bar -->
         <div class="chart-card">
-          <div class="chart-title"><i class="fas fa-chart-bar"></i> Re-Registration % by Batch</div>
-          <div class="chart-wrap" style="height:320px"><canvas id="reRegBarChart"></canvas></div>
+
+          <div class="chart-title">
+
+            <i class="fas fa-chart-bar"></i>
+
+            Re-Registration % by Batch
+
+          </div>
+
+          <div
+            class="chart-wrap"
+            style="height:320px">
+
+            <canvas id="reRegBarChart"></canvas>
+
+          </div>
+
         </div>
+
+        <!-- Pie -->
         <div class="chart-card">
-          <div class="chart-title"><i class="fas fa-chart-pie"></i> Overall Re-Reg Status</div>
-          <div class="chart-wrap" style="height:320px"><canvas id="reRegPieChart"></canvas></div>
+
+          <div class="chart-title">
+
+            <i class="fas fa-chart-pie"></i>
+
+            Overall Re-Reg Status
+
+          </div>
+
+          <div
+            class="chart-wrap"
+            style="height:320px">
+
+            <canvas id="reRegPieChart"></canvas>
+
+          </div>
+
         </div>
+
       </div>
+
     </section>
 
-    <!-- ===== CHARTS ROW 2 ===== -->
+    <!-- ===================================================
+         CHARTS ROW 2
+    ==================================================== -->
+
     <section class="section-block">
+
       <div class="charts-row">
+
+        <!-- IA -->
         <div class="chart-card">
-          <div class="chart-title"><i class="fas fa-chart-line"></i> IA % by Batch</div>
-          <div class="chart-wrap" style="height:320px"><canvas id="iaBarChart"></canvas></div>
+
+          <div class="chart-title">
+
+            <i class="fas fa-chart-line"></i>
+
+            IA % by Batch
+
+          </div>
+
+          <div
+            class="chart-wrap"
+            style="height:320px">
+
+            <canvas id="iaBarChart"></canvas>
+
+          </div>
+
         </div>
+
+        <!-- Stacked -->
         <div class="chart-card">
-          <div class="chart-title"><i class="fas fa-chart-bar"></i> Re-Reg Done vs Pending by Batch</div>
-          <div class="chart-wrap" style="height:320px"><canvas id="stackedBarChart"></canvas></div>
+
+          <div class="chart-title">
+
+            <i class="fas fa-chart-bar"></i>
+
+            Re-Reg Done vs Pending by Batch
+
+          </div>
+
+          <div
+            class="chart-wrap"
+            style="height:320px">
+
+            <canvas id="stackedBarChart"></canvas>
+
+          </div>
+
         </div>
+
       </div>
+
     </section>
 
-    <!-- ===== PROGRAM-WISE SECTION ===== -->
+    <!-- ===================================================
+         PROGRAM SUMMARY
+    ==================================================== -->
+
     <section class="section-block">
-      <div class="section-title"><i class="fas fa-university"></i> Program-wise Summary</div>
-      <div class="kpi-grid" id="programGrid"></div>
+
+      <div class="section-title">
+
+        <i class="fas fa-university"></i>
+
+        Program-wise Summary
+
+      </div>
+
+      <div
+        class="kpi-grid"
+        id="programGrid">
+
+      </div>
+
     </section>
 
-    <!-- ===== DETAILED DATA TABLE ===== -->
+    <!-- ===================================================
+         DETAILED TABLE
+    ==================================================== -->
+
     <section class="section-block">
+
       <div class="section-header-row">
-        <div class="section-title"><i class="fas fa-list"></i> Detailed Student Data</div>
-        <div class="table-meta" id="tableMeta"></div>
-        <button class="btn-export" onclick="exportFilteredData()"><i class="fas fa-download"></i> Export CSV</button>
+
+        <div class="section-title">
+
+          <i class="fas fa-list"></i>
+
+          Detailed Student Data
+
+        </div>
+
+        <div
+          class="table-meta"
+          id="tableMeta">
+
+        </div>
+
+        <button
+          class="btn-export"
+          onclick="exportFilteredData()">
+
+          <i class="fas fa-download"></i>
+
+          Export CSV
+
+        </button>
+
       </div>
+
       <div class="table-responsive">
-        <table class="data-table" id="detailTable">
-          <thead id="detailTableHead"></thead>
-          <tbody id="detailTableBody"></tbody>
+
+        <table
+          class="data-table"
+          id="detailTable">
+
+          <thead id="detailTableHead">
+
+          </thead>
+
+          <tbody id="detailTableBody">
+
+          </tbody>
+
         </table>
+
       </div>
-      <div class="pagination" id="pagination"></div>
+
+      <div
+        class="pagination"
+        id="pagination">
+
+      </div>
+
     </section>
 
   </div>
 
-  <!-- ===== FOOTER ===== -->
+  <!-- =======================================================
+       FOOTER
+  ======================================================== -->
+
   <footer class="app-footer">
-    <span>Re-Registration Analytics Dashboard &copy; 2025</span>
-    <span>Data processed locally in your browser · No data uploaded to any server</span>
+
+    <span>
+      Re-Registration Analytics Dashboard © 2025
+    </span>
+
+    <span>
+      Data processed locally in browser
+    </span>
+
   </footer>
 
+  <!-- =======================================================
+       JAVASCRIPT
+  ======================================================== -->
+
   <script src="js/dashboard.js"></script>
+
 </body>
 </html>
