@@ -1,157 +1,148 @@
 /* ============================================================
-   RE-REGISTRATION DASHBOARD — MAIN JAVASCRIPT
+   RE-REGISTRATION DASHBOARD — FINAL SCRIPT
    ============================================================ */
 
 'use strict';
 
-// ────────────────────────────────────────────────────────────
-// STATE
-// ────────────────────────────────────────────────────────────
-let rawData       = [];
-let filteredData  = [];
-let allColumns    = [];
-let columnMap     = {};
-let charts        = {};
-let currentPage   = 1;
+/* ============================================================
+   STATE
+============================================================ */
+
+let rawData = [];
+let filteredData = [];
+let allColumns = [];
+let charts = {};
+let currentPage = 1;
 
 const PAGE_SIZE = 25;
 
-// ────────────────────────────────────────────────────────────
-// COLUMN DETECTION
-// ────────────────────────────────────────────────────────────
-const COL_PATTERNS = {
-  batch:       [/batch/i, /cohort/i],
-  program:     [/program/i, /programme/i, /course/i, /degree/i],
-  studentId:   [/student.?id/i, /roll/i, /reg/i],
-  studentName: [/student.?name/i, /name/i],
-  sem:         [/sem/i, /semester/i],
-  gender:      [/gender/i],
-  mobile:      [/mobile/i, /phone/i],
-  email:       [/email/i],
-  center:      [/center/i, /centre/i, /campus/i],
-  iaStatus:    [/ia/i, /internal/i]
-};
+/* ============================================================
+   FILE HANDLING
+============================================================ */
 
-function detectColumn(headers, key) {
-  const patterns = COL_PATTERNS[key] || [];
-
-  for (const h of headers) {
-    for (const p of patterns) {
-      if (p.test(h)) return h;
-    }
-  }
-
-  return null;
-}
-
-function normalizeVal(val) {
-  if (val === null || val === undefined) return '';
-  return String(val).trim();
-}
-
-// ────────────────────────────────────────────────────────────
-// FILE INPUT
-// ────────────────────────────────────────────────────────────
 document
   .getElementById('fileInput')
   .addEventListener('change', handleFile);
 
+const uploadCard =
+  document.querySelector('.upload-card');
+
+uploadCard.addEventListener('dragover', e => {
+  e.preventDefault();
+  uploadCard.classList.add('drag-over');
+});
+
+uploadCard.addEventListener('dragleave', () => {
+  uploadCard.classList.remove('drag-over');
+});
+
+uploadCard.addEventListener('drop', e => {
+
+  e.preventDefault();
+
+  uploadCard.classList.remove('drag-over');
+
+  const file = e.dataTransfer.files[0];
+
+  if (file) processFile(file);
+});
+
 function handleFile(e) {
+
   const file = e.target.files[0];
 
   if (file) processFile(file);
 }
 
 function processFile(file) {
+
   showLoading(true);
 
   const reader = new FileReader();
 
   reader.onload = function(e) {
+
     try {
-      const data = new Uint8Array(e.target.result);
+
+      const data =
+        new Uint8Array(e.target.result);
 
       const workbook = XLSX.read(data, {
-        type: 'array',
-        cellDates: true
+        type: 'array'
       });
 
       parseWorkbook(workbook, file.name);
 
     } catch (err) {
+
       showLoading(false);
-      alert('Error reading file: ' + err.message);
+
+      alert(
+        'Error reading file: ' + err.message
+      );
     }
   };
 
   reader.readAsArrayBuffer(file);
 }
 
-// ────────────────────────────────────────────────────────────
-// PARSE WORKBOOK
-// ────────────────────────────────────────────────────────────
+/* ============================================================
+   PARSE WORKBOOK
+============================================================ */
+
 function parseWorkbook(workbook, fileName) {
 
   rawData = [];
 
   let bestSheet = null;
-  let maxRows   = 0;
+  let maxRows = 0;
 
   workbook.SheetNames.forEach(name => {
 
     const sheet = workbook.Sheets[name];
 
-    const json = XLSX.utils.sheet_to_json(sheet, {
-      defval: ''
-    });
+    const json =
+      XLSX.utils.sheet_to_json(sheet, {
+        defval: ''
+      });
 
     if (json.length > maxRows) {
-      maxRows   = json.length;
+
+      maxRows = json.length;
       bestSheet = sheet;
     }
   });
 
   if (!bestSheet) {
+
     alert('No data found');
+
     showLoading(false);
+
     return;
   }
 
-  const json = XLSX.utils.sheet_to_json(bestSheet, {
-    defval: ''
-  });
+  rawData =
+    XLSX.utils.sheet_to_json(bestSheet, {
+      defval: ''
+    });
 
-  if (!json.length) {
-    alert('Sheet empty');
-    showLoading(false);
-    return;
-  }
+  allColumns = Object.keys(rawData[0]);
 
-  rawData    = json;
-  allColumns = Object.keys(json[0]);
+  filteredData = [...rawData];
 
-  // Detect columns
-  columnMap = {};
+  populateFilters();
 
-  Object.keys(COL_PATTERNS).forEach(key => {
-    columnMap[key] = detectColumn(allColumns, key);
-  });
+  renderDashboard();
 
-  // Last Updated
-  const lu = document.getElementById('lastUpdated');
+  // last updated
+  const lu =
+    document.getElementById('lastUpdated');
 
   lu.classList.remove('hidden');
 
   lu.querySelector('span').textContent =
     `Loaded: ${fileName} · ${rawData.length} rows`;
-
-  populateFilters();
-
-  filteredData = [...rawData];
-
-  renderDashboard();
-
-  showLoading(false);
 
   document
     .getElementById('uploadZone')
@@ -160,21 +151,26 @@ function parseWorkbook(workbook, fileName) {
   document
     .getElementById('dashboard')
     .classList.remove('hidden');
-}
 
-// ────────────────────────────────────────────────────────────
-// HELPERS
-// ────────────────────────────────────────────────────────────
-function getVal(row, key) {
-  const col = columnMap[key];
-
-  return col ? normalizeVal(row[col]) : '';
+  showLoading(false);
 }
 
 /* ============================================================
-   IMPORTANT CHANGE
-   Re-Reg is calculated ONLY from LAST COLUMN
-   ============================================================ */
+   HELPERS
+============================================================ */
+
+function normalizeVal(val) {
+
+  if (val === null || val === undefined)
+    return '';
+
+  return String(val).trim();
+}
+
+/* ============================================================
+   IMPORTANT:
+   Re-Reg Status from LAST COLUMN ONLY
+============================================================ */
 
 function isReRegDone(row) {
 
@@ -182,7 +178,7 @@ function isReRegDone(row) {
 
   if (!values.length) return false;
 
-  const lastColumnValue = String(
+  const lastValue = String(
     values[values.length - 1] || ''
   )
     .trim()
@@ -193,22 +189,12 @@ function isReRegDone(row) {
     'done',
     'completed',
     'complete',
+    'yes',
     'success',
     'registered',
-    'yes',
     'true',
     '1'
-  ].includes(lastColumnValue);
-}
-
-// IA Status
-function isIASubmitted(row) {
-
-  const ia = getVal(row, 'iaStatus')
-    .toLowerCase();
-
-  return /\b(done|submitted|complete|yes|true|1)\b/
-    .test(ia);
+  ].includes(lastValue);
 }
 
 function pct(num, den) {
@@ -218,66 +204,50 @@ function pct(num, den) {
   return Math.round((num / den) * 1000) / 10;
 }
 
-function pctClass(p) {
+/* ============================================================
+   FILTERS
+============================================================ */
 
-  if (p >= 75) return 'pct-high';
-
-  if (p >= 50) return 'pct-med';
-
-  return 'pct-low';
-}
-
-// ────────────────────────────────────────────────────────────
-// FILTERS
-// ────────────────────────────────────────────────────────────
 function populateFilters() {
 
-  const batchSel   =
+  const batchSel =
     document.getElementById('filterBatch');
 
   const programSel =
     document.getElementById('filterProgram');
 
-  batchSel.innerHTML =
-    '<option value="ALL">All Batches</option>';
-
-  programSel.innerHTML =
-    '<option value="ALL">All Programs</option>';
-
   const batches = [
     ...new Set(
-      rawData
-        .map(r => getVal(r, 'batch'))
-        .filter(Boolean)
+      rawData.map(r => r.Batch).filter(Boolean)
     )
-  ].sort();
+  ];
 
   const programs = [
     ...new Set(
-      rawData
-        .map(r => getVal(r, 'program'))
-        .filter(Boolean)
+      rawData.map(r => r.Program).filter(Boolean)
     )
-  ].sort();
+  ];
 
-  batches.forEach(b => {
+  batches.sort().forEach(b => {
 
-    const o = document.createElement('option');
+    const opt =
+      document.createElement('option');
 
-    o.value = b;
-    o.textContent = b;
+    opt.value = b;
+    opt.textContent = b;
 
-    batchSel.appendChild(o);
+    batchSel.appendChild(opt);
   });
 
-  programs.forEach(p => {
+  programs.sort().forEach(p => {
 
-    const o = document.createElement('option');
+    const opt =
+      document.createElement('option');
 
-    o.value = p;
-    o.textContent = p;
+    opt.value = p;
+    opt.textContent = p;
 
-    programSel.appendChild(o);
+    programSel.appendChild(opt);
   });
 }
 
@@ -301,12 +271,12 @@ function applyFilters() {
 
     if (
       batch !== 'ALL' &&
-      getVal(row, 'batch') !== batch
+      row.Batch !== batch
     ) return false;
 
     if (
       program !== 'ALL' &&
-      getVal(row, 'program') !== program
+      row.Program !== program
     ) return false;
 
     if (
@@ -321,11 +291,12 @@ function applyFilters() {
 
     if (search) {
 
-      const rowStr = Object.values(row)
-        .join(' ')
-        .toLowerCase();
+      const rowText =
+        Object.values(row)
+          .join(' ')
+          .toLowerCase();
 
-      if (!rowStr.includes(search))
+      if (!rowText.includes(search))
         return false;
     }
 
@@ -353,8 +324,6 @@ function resetFilters() {
 
   filteredData = [...rawData];
 
-  currentPage = 1;
-
   renderDashboard();
 }
 
@@ -373,101 +342,35 @@ document
   .getElementById('searchInput')
   .addEventListener('input', applyFilters);
 
-// ────────────────────────────────────────────────────────────
-// ANALYTICS
-// ────────────────────────────────────────────────────────────
+/* ============================================================
+   STATS
+============================================================ */
+
 function computeStats(data) {
 
   const total = data.length;
 
-  const reRegDone =
+  const done =
     data.filter(isReRegDone).length;
 
-  const reRegPend =
-    total - reRegDone;
+  const pending =
+    total - done;
 
-  const reRegPct =
-    pct(reRegDone, total);
-
-  const iaSubmitted =
-    data.filter(isIASubmitted).length;
-
-  const iaPct =
-    pct(iaSubmitted, total);
-
-  // Batch-wise
-  const batchMap = {};
-
-  data.forEach(row => {
-
-    const batch =
-      getVal(row, 'batch') || 'Unknown';
-
-    const program =
-      getVal(row, 'program') || 'Unknown';
-
-    if (!batchMap[batch]) {
-
-      batchMap[batch] = {
-        batch,
-        program: new Set(),
-        total: 0,
-        done: 0,
-        ia: 0
-      };
-    }
-
-    batchMap[batch].total++;
-
-    batchMap[batch].program.add(program);
-
-    if (isReRegDone(row))
-      batchMap[batch].done++;
-
-    if (isIASubmitted(row))
-      batchMap[batch].ia++;
-  });
-
-  const batchStats = Object
-    .values(batchMap)
-    .map(b => ({
-
-      batch: b.batch,
-
-      program:
-        [...b.program].join(', '),
-
-      total: b.total,
-
-      done: b.done,
-
-      pending:
-        b.total - b.done,
-
-      reRegPct:
-        pct(b.done, b.total),
-
-      ia: b.ia,
-
-      iaPct:
-        pct(b.ia, b.total)
-
-    }));
+  const percent =
+    pct(done, total);
 
   return {
     total,
-    reRegDone,
-    reRegPend,
-    reRegPct,
-    iaSubmitted,
-    iaPct,
-    batchStats
+    done,
+    pending,
+    percent
   };
 }
 
-// ────────────────────────────────────────────────────────────
-// RENDER DASHBOARD
-// ────────────────────────────────────────────────────────────
+/* ============================================================
+   RENDER DASHBOARD
+============================================================ */
+
 function renderDashboard() {
 
   const stats =
@@ -475,69 +378,48 @@ function renderDashboard() {
 
   renderKPIs(stats);
 
-  renderBatchTable(stats.batchStats);
-
   renderCharts(stats);
 
   renderDetailTable();
 }
 
-// ────────────────────────────────────────────────────────────
-// KPI
-// ────────────────────────────────────────────────────────────
+/* ============================================================
+   KPI CARDS
+============================================================ */
+
 function renderKPIs(stats) {
 
-  document.getElementById('totalStudents')
-    .textContent = stats.total;
+  const grid =
+    document.getElementById('kpiGrid');
 
-  document.getElementById('reRegDone')
-    .textContent = stats.reRegDone;
+  grid.innerHTML = `
 
-  document.getElementById('reRegPending')
-    .textContent = stats.reRegPend;
+    <div class="kpi-card">
+      <div class="kpi-label">Total Students</div>
+      <div class="kpi-value">${stats.total}</div>
+    </div>
 
-  document.getElementById('reRegPct')
-    .textContent = stats.reRegPct + '%';
+    <div class="kpi-card">
+      <div class="kpi-label">Re-Reg Done</div>
+      <div class="kpi-value">${stats.done}</div>
+    </div>
 
-  document.getElementById('iaPct')
-    .textContent = stats.iaPct + '%';
+    <div class="kpi-card">
+      <div class="kpi-label">Pending</div>
+      <div class="kpi-value">${stats.pending}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-label">Completion %</div>
+      <div class="kpi-value">${stats.percent}%</div>
+    </div>
+  `;
 }
 
-// ────────────────────────────────────────────────────────────
-// BATCH TABLE
-// ────────────────────────────────────────────────────────────
-function renderBatchTable(batchStats) {
+/* ============================================================
+   CHARTS
+============================================================ */
 
-  const tbody =
-    document.getElementById('batchSummaryBody');
-
-  if (!batchStats.length) {
-
-    tbody.innerHTML =
-      '<tr><td colspan="8">No Data</td></tr>';
-
-    return;
-  }
-
-  tbody.innerHTML = batchStats.map(b => `
-
-    <tr>
-      <td>${b.batch}</td>
-      <td>${b.program}</td>
-      <td>${b.total}</td>
-      <td>${b.done}</td>
-      <td>${b.pending}</td>
-      <td>${b.reRegPct}%</td>
-      <td>${b.ia}</td>
-      <td>${b.iaPct}%</td>
-    </tr>
-
-  `).join('');
-}
-
-// ────────────────────────────────────────────────────────────
-// CHARTS
-// ────────────────────────────────────────────────────────────
 function destroyCharts() {
 
   Object.values(charts).forEach(c => {
@@ -552,44 +434,13 @@ function renderCharts(stats) {
 
   destroyCharts();
 
-  const labels =
-    stats.batchStats.map(b => b.batch);
-
-  // BAR CHART
-  const ctx1 =
-    document
-      .getElementById('reRegBarChart')
-      .getContext('2d');
-
-  charts.bar = new Chart(ctx1, {
-
-    type: 'bar',
-
-    data: {
-
-      labels,
-
-      datasets: [{
-
-        label: 'Re-Reg %',
-
-        data:
-          stats.batchStats
-            .map(b => b.reRegPct),
-
-        backgroundColor: '#4f46e5'
-
-      }]
-    }
-  });
-
-  // PIE CHART
-  const ctx2 =
+  // Pie Chart
+  const pieCtx =
     document
       .getElementById('reRegPieChart')
       .getContext('2d');
 
-  charts.pie = new Chart(ctx2, {
+  charts.pie = new Chart(pieCtx, {
 
     type: 'doughnut',
 
@@ -598,10 +449,9 @@ function renderCharts(stats) {
       labels: ['Done', 'Pending'],
 
       datasets: [{
-
         data: [
-          stats.reRegDone,
-          stats.reRegPend
+          stats.done,
+          stats.pending
         ],
 
         backgroundColor: [
@@ -611,11 +461,46 @@ function renderCharts(stats) {
       }]
     }
   });
+
+  // Bar Chart
+  const barCtx =
+    document
+      .getElementById('reRegBarChart')
+      .getContext('2d');
+
+  charts.bar = new Chart(barCtx, {
+
+    type: 'bar',
+
+    data: {
+
+      labels: ['Completion'],
+
+      datasets: [{
+
+        label: 'Re-Reg %',
+
+        data: [stats.percent],
+
+        backgroundColor: '#4f46e5'
+      }]
+    },
+
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100
+        }
+      }
+    }
+  });
 }
 
-// ────────────────────────────────────────────────────────────
-// DETAIL TABLE
-// ────────────────────────────────────────────────────────────
+/* ============================================================
+   DETAIL TABLE
+============================================================ */
+
 function renderDetailTable() {
 
   const head =
@@ -623,6 +508,9 @@ function renderDetailTable() {
 
   const body =
     document.getElementById('detailTableBody');
+
+  const meta =
+    document.getElementById('tableMeta');
 
   const start =
     (currentPage - 1) * PAGE_SIZE;
@@ -633,44 +521,45 @@ function renderDetailTable() {
   const page =
     filteredData.slice(start, end);
 
-  let showCols = allColumns;
+  meta.textContent =
+    `Showing ${start + 1} - ${Math.min(end, filteredData.length)}
+     of ${filteredData.length}`;
 
   head.innerHTML =
     '<tr>' +
-    showCols.map(c => `<th>${c}</th>`).join('') +
+    allColumns.map(c =>
+      `<th>${c}</th>`
+    ).join('') +
     '</tr>';
 
   body.innerHTML = page.map(row => {
 
     return '<tr>' +
 
-      showCols.map(col => {
+      allColumns.map((col, idx) => {
 
-        let val = normalizeVal(row[col]);
+        const val =
+          normalizeVal(row[col]);
 
-        // Highlight LAST COLUMN status
         const isLast =
-          col === allColumns[allColumns.length - 1];
+          idx === allColumns.length - 1;
 
         if (isLast) {
 
-          const done =
-            isReRegDone(row);
-
           return `
             <td>
-              <span class="status-pill ${
-                done
+              <span class="${
+                isReRegDone(row)
                   ? 'status-done'
                   : 'status-pending'
               }">
-                ${val || 'Pending'}
+                ${val}
               </span>
             </td>
           `;
         }
 
-        return `<td>${val || '—'}</td>`;
+        return `<td>${val}</td>`;
 
       }).join('')
 
@@ -679,12 +568,11 @@ function renderDetailTable() {
   }).join('');
 }
 
-// ────────────────────────────────────────────────────────────
-// EXPORT CSV
-// ────────────────────────────────────────────────────────────
-function exportFilteredData() {
+/* ============================================================
+   EXPORT CSV
+============================================================ */
 
-  if (!filteredData.length) return;
+function exportFilteredData() {
 
   const ws =
     XLSX.utils.json_to_sheet(filteredData);
@@ -706,26 +594,17 @@ function exportFilteredData() {
   a.href = url;
 
   a.download =
-    'rereg_filtered_data.csv';
+    'filtered_data.csv';
 
   a.click();
 
   URL.revokeObjectURL(url);
 }
 
-// ────────────────────────────────────────────────────────────
-// PAGINATION
-// ────────────────────────────────────────────────────────────
-function goPage(page) {
+/* ============================================================
+   LOADING
+============================================================ */
 
-  currentPage = page;
-
-  renderDetailTable();
-}
-
-// ────────────────────────────────────────────────────────────
-// LOADING
-// ────────────────────────────────────────────────────────────
 function showLoading(show) {
 
   document
