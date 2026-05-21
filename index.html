@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
   <meta charset="UTF-8" />
@@ -206,11 +207,9 @@
           </label>
 
           <select id="filterBatch">
-
             <option value="ALL">
               All Batches
             </option>
-
           </select>
 
         </div>
@@ -224,11 +223,9 @@
           </label>
 
           <select id="filterProgram">
-
             <option value="ALL">
               All Programs
             </option>
-
           </select>
 
         </div>
@@ -242,11 +239,9 @@
           </label>
 
           <select id="filterSource">
-
             <option value="ALL">
               All Sources
             </option>
-
           </select>
 
         </div>
@@ -260,11 +255,9 @@
           </label>
 
           <select id="filterSalesType">
-
             <option value="ALL">
               All Sales Types
             </option>
-
           </select>
 
         </div>
@@ -278,11 +271,9 @@
           </label>
 
           <select id="filterUGC">
-
             <option value="ALL">
               All UGC
             </option>
-
           </select>
 
         </div>
@@ -306,18 +297,18 @@
             </option>
 
             <option value="PARTIAL">
-              Partially Submitted
+              Partial
             </option>
 
             <option value="NIL">
-              Nil Submission
+              Nil
             </option>
 
           </select>
 
         </div>
 
-        <!-- Re-Reg Status -->
+        <!-- Re-Reg -->
         <div class="filter-group">
 
           <label>
@@ -374,7 +365,7 @@
     </section>
 
     <!-- ===================================================
-         KPI CARDS
+         KPI SECTION
     ==================================================== -->
 
     <section class="section-block">
@@ -396,7 +387,7 @@
     </section>
 
     <!-- ===================================================
-         BATCH SUMMARY TABLE
+         BATCH SUMMARY
     ==================================================== -->
 
     <section class="section-block">
@@ -420,18 +411,34 @@
             <tr>
 
               <th>Batch</th>
+
               <th>Total Students</th>
+
               <th>Re-Reg Done</th>
+
               <th>Pending</th>
+
               <th>Re-Reg %</th>
 
-              <th>IA Submitted</th>
-              <th>IA Partial</th>
-              <th>IA Nil</th>
+              <th>
+                IA Submitted
+              </th>
 
-              <th>IA %</th>
+              <th>
+                IA Partial
+              </th>
 
-              <th>Status</th>
+              <th>
+                IA Nil
+              </th>
+
+              <th>
+                IA %
+              </th>
+
+              <th>
+                Status
+              </th>
 
             </tr>
 
@@ -530,7 +537,7 @@
 
         </div>
 
-        <!-- Stacked -->
+        <!-- STACKED -->
         <div class="chart-card">
 
           <div class="chart-title">
@@ -556,7 +563,7 @@
     </section>
 
     <!-- ===================================================
-         PROGRAM SUMMARY TABLE
+         PROGRAM SUMMARY
     ==================================================== -->
 
     <section class="section-block">
@@ -580,13 +587,19 @@
             <tr>
 
               <th>Program</th>
+
               <th>Total Students</th>
+
               <th>Re-Reg Done</th>
+
               <th>Pending</th>
+
               <th>Re-Reg %</th>
 
               <th>IA Submitted</th>
+
               <th>IA Partial</th>
+
               <th>IA Nil</th>
 
               <th>IA %</th>
@@ -608,7 +621,7 @@
     </section>
 
     <!-- ===================================================
-         DETAILED TABLE
+         DETAIL TABLE
     ==================================================== -->
 
     <section class="section-block">
@@ -647,9 +660,13 @@
           class="data-table"
           id="detailTable">
 
-          <thead id="detailTableHead"></thead>
+          <thead id="detailTableHead">
 
-          <tbody id="detailTableBody"></tbody>
+          </thead>
+
+          <tbody id="detailTableBody">
+
+          </tbody>
 
         </table>
 
@@ -688,4 +705,5 @@
   <script src="js/dashboard.js"></script>
 
 </body>
+
 </html>
