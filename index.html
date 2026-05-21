@@ -11,7 +11,7 @@
   />
 
   <title>
-    Re-Registration Dashboard | Sem 1 → Sem 2
+    Re-Registration Dashboard
   </title>
 
   <!-- Fonts -->
@@ -29,19 +29,17 @@
   <!-- XLSX -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  <!-- Chart JS -->
+  <!-- ChartJS -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-  <!-- Styles -->
+  <!-- CSS -->
   <link rel="stylesheet" href="css/style.css" />
 
 </head>
 
 <body>
 
-  <!-- =======================================================
-       HEADER
-  ======================================================== -->
+  <!-- HEADER -->
 
   <header class="app-header">
 
@@ -60,7 +58,7 @@
           </h1>
 
           <span>
-            Semester 1 → Semester 2 Transition Analytics
+            Semester 1 → Semester 2 Analytics
           </span>
 
         </div>
@@ -100,9 +98,7 @@
 
   </header>
 
-  <!-- =======================================================
-       UPLOAD SECTION
-  ======================================================== -->
+  <!-- UPLOAD -->
 
   <main
     id="uploadZone"
@@ -115,54 +111,22 @@
       </div>
 
       <h2>
-        Upload Re-Reg Dashboard Excel
+        Upload Excel File
       </h2>
-
-      <p>
-        Upload your
-        <strong>
-          Re-reg Dashboard from Sem1 to Sem2.xlsx
-        </strong>
-        file
-      </p>
 
       <label
         class="upload-btn"
         for="fileInput">
 
-        <i class="fas fa-folder-open"></i>
         Choose Excel File
 
       </label>
-
-      <div
-        class="upload-drop-area"
-        id="dropArea">
-
-        <i class="fas fa-cloud-upload-alt"></i>
-
-        <span>
-          Drag & Drop Excel Here
-        </span>
-
-      </div>
-
-      <p class="upload-hint">
-
-        <i class="fas fa-info-circle"></i>
-
-        Supports .xlsx and .xls files ·
-        Data stays in your browser
-
-      </p>
 
     </div>
 
   </main>
 
-  <!-- =======================================================
-       LOADING
-  ======================================================== -->
+  <!-- LOADING -->
 
   <div
     id="loadingScreen"
@@ -173,189 +137,130 @@
       <div class="spinner"></div>
 
       <p>
-        Processing Excel Data...
+        Processing Data...
       </p>
 
     </div>
 
   </div>
 
-  <!-- =======================================================
-       DASHBOARD
-  ======================================================== -->
+  <!-- DASHBOARD -->
 
   <div
     id="dashboard"
     class="dashboard hidden">
 
-    <!-- ===================================================
-         FILTER BAR
-    ==================================================== -->
+    <!-- FILTERS -->
 
-    <section
-      class="filter-bar"
-      id="filterBar">
+    <section class="filter-bar">
 
       <div class="filter-inner">
 
-        <!-- Batch -->
         <div class="filter-group">
 
-          <label>
-            <i class="fas fa-layer-group"></i>
-            Batch
-          </label>
+          <label>Batch</label>
 
           <select id="filterBatch">
             <option value="ALL">
-              All Batches
+              All
             </option>
           </select>
 
         </div>
 
-        <!-- Program -->
         <div class="filter-group">
 
-          <label>
-            <i class="fas fa-book"></i>
-            Program
-          </label>
+          <label>Program</label>
 
           <select id="filterProgram">
             <option value="ALL">
-              All Programs
+              All
             </option>
           </select>
 
         </div>
 
-        <!-- Source -->
         <div class="filter-group">
 
-          <label>
-            <i class="fas fa-database"></i>
-            Source
-          </label>
+          <label>Source</label>
 
           <select id="filterSource">
             <option value="ALL">
-              All Sources
+              All
             </option>
           </select>
 
         </div>
 
-        <!-- Sales Type -->
         <div class="filter-group">
 
-          <label>
-            <i class="fas fa-chart-line"></i>
-            Sales Type
-          </label>
+          <label>Sales Type</label>
 
           <select id="filterSalesType">
             <option value="ALL">
-              All Sales Types
+              All
             </option>
           </select>
 
         </div>
 
-        <!-- UGC -->
         <div class="filter-group">
 
-          <label>
-            <i class="fas fa-university"></i>
-            UGC
-          </label>
+          <label>UGC</label>
 
           <select id="filterUGC">
             <option value="ALL">
-              All UGC
+              All
             </option>
           </select>
 
         </div>
 
-        <!-- IA Status -->
         <div class="filter-group">
 
-          <label>
-            <i class="fas fa-file-alt"></i>
-            IA Status
-          </label>
+          <label>IA Status</label>
 
           <select id="filterIAStatus">
 
-            <option value="ALL">
-              All IA Status
-            </option>
-
-            <option value="SUBMITTED">
-              Submitted
-            </option>
-
-            <option value="PARTIAL">
-              Partial
-            </option>
-
-            <option value="NIL">
-              Nil
-            </option>
+            <option value="ALL">All</option>
+            <option value="SUBMITTED">Submitted</option>
+            <option value="PARTIAL">Partial</option>
+            <option value="NIL">Nil</option>
 
           </select>
 
         </div>
 
-        <!-- Re-Reg -->
         <div class="filter-group">
 
-          <label>
-            <i class="fas fa-check-circle"></i>
-            Re-Reg Status
-          </label>
+          <label>Re-Reg</label>
 
           <select id="filterStatus">
 
-            <option value="ALL">
-              All Status
-            </option>
-
-            <option value="DONE">
-              Re-Reg Done
-            </option>
-
-            <option value="PENDING">
-              Pending
-            </option>
+            <option value="ALL">All</option>
+            <option value="DONE">Done</option>
+            <option value="PENDING">Pending</option>
 
           </select>
 
         </div>
 
-        <!-- Search -->
         <div class="filter-group search-group">
 
-          <label>
-            <i class="fas fa-search"></i>
-            Search
-          </label>
+          <label>Search</label>
 
           <input
             type="text"
             id="searchInput"
-            placeholder="Search student / batch / program..."
+            placeholder="Search..."
           />
 
         </div>
 
-        <!-- Reset -->
         <button
           class="btn-reset"
           onclick="resetFilters()">
 
-          <i class="fas fa-undo"></i>
           Reset
 
         </button>
@@ -364,18 +269,12 @@
 
     </section>
 
-    <!-- ===================================================
-         KPI SECTION
-    ==================================================== -->
+    <!-- KPI -->
 
     <section class="section-block">
 
       <div class="section-title">
-
-        <i class="fas fa-tachometer-alt"></i>
-
-        Key Performance Indicators
-
+        KPI Summary
       </div>
 
       <div
@@ -386,59 +285,37 @@
 
     </section>
 
-    <!-- ===================================================
-         BATCH SUMMARY
-    ==================================================== -->
+    <!-- BATCH SUMMARY -->
 
     <section class="section-block">
 
       <div class="section-title">
-
-        <i class="fas fa-table"></i>
-
-        Batch-wise Re-Registration Summary
-
+        Batch-wise Summary
       </div>
 
       <div class="table-responsive">
 
-        <table
-          class="data-table"
-          id="batchSummaryTable">
+        <table class="data-table">
 
           <thead>
 
             <tr>
 
               <th>Batch</th>
-
-              <th>Total Students</th>
-
-              <th>Re-Reg Done</th>
-
+              <th>Total</th>
+              <th>Done</th>
               <th>Pending</th>
-
               <th>Re-Reg %</th>
 
-              <th>
-                IA Submitted
-              </th>
+              <th>IA Submitted</th>
+              <th>IA Partial</th>
+              <th>IA Full</th>
+              <th>IA Nil</th>
+              <th>IA %</th>
 
-              <th>
-                IA Partial
-              </th>
+              <th>Exam Attendance %</th>
 
-              <th>
-                IA Nil
-              </th>
-
-              <th>
-                IA %
-              </th>
-
-              <th>
-                Status
-              </th>
+              <th>Status</th>
 
             </tr>
 
@@ -454,52 +331,32 @@
 
     </section>
 
-    <!-- ===================================================
-         CHARTS ROW 1
-    ==================================================== -->
+    <!-- CHARTS -->
 
     <section class="section-block">
 
       <div class="charts-row">
 
-        <!-- Re-Reg Bar -->
         <div class="chart-card">
 
           <div class="chart-title">
-
-            <i class="fas fa-chart-bar"></i>
-
-            Re-Registration % by Batch
-
+            Re-Reg % by Batch
           </div>
 
-          <div
-            class="chart-wrap"
-            style="height:320px">
-
+          <div class="chart-wrap">
             <canvas id="reRegBarChart"></canvas>
-
           </div>
 
         </div>
 
-        <!-- Pie -->
         <div class="chart-card">
 
           <div class="chart-title">
-
-            <i class="fas fa-chart-pie"></i>
-
             Overall Re-Reg Status
-
           </div>
 
-          <div
-            class="chart-wrap"
-            style="height:320px">
-
+          <div class="chart-wrap">
             <canvas id="reRegPieChart"></canvas>
-
           </div>
 
         </div>
@@ -508,52 +365,32 @@
 
     </section>
 
-    <!-- ===================================================
-         CHARTS ROW 2
-    ==================================================== -->
+    <!-- CHARTS 2 -->
 
     <section class="section-block">
 
       <div class="charts-row">
 
-        <!-- IA -->
         <div class="chart-card">
 
           <div class="chart-title">
-
-            <i class="fas fa-chart-line"></i>
-
             IA % by Batch
-
           </div>
 
-          <div
-            class="chart-wrap"
-            style="height:320px">
-
+          <div class="chart-wrap">
             <canvas id="iaBarChart"></canvas>
-
           </div>
 
         </div>
 
-        <!-- STACKED -->
         <div class="chart-card">
 
           <div class="chart-title">
-
-            <i class="fas fa-chart-bar"></i>
-
-            Re-Reg Done vs Pending by Batch
-
+            Done vs Pending
           </div>
 
-          <div
-            class="chart-wrap"
-            style="height:320px">
-
+          <div class="chart-wrap">
             <canvas id="stackedBarChart"></canvas>
-
           </div>
 
         </div>
@@ -562,47 +399,69 @@
 
     </section>
 
-    <!-- ===================================================
-         PROGRAM SUMMARY
-    ==================================================== -->
+    <!-- CHARTS 3 -->
+
+    <section class="section-block">
+
+      <div class="charts-row">
+
+        <div class="chart-card">
+
+          <div class="chart-title">
+            Exam Attendance %
+          </div>
+
+          <div class="chart-wrap">
+            <canvas id="examAttendanceChart"></canvas>
+          </div>
+
+        </div>
+
+        <div class="chart-card">
+
+          <div class="chart-title">
+            Sales Type Distribution
+          </div>
+
+          <div class="chart-wrap">
+            <canvas id="salesTypeChart"></canvas>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- PROGRAM SUMMARY -->
 
     <section class="section-block">
 
       <div class="section-title">
-
-        <i class="fas fa-university"></i>
-
         Program-wise Summary
-
       </div>
 
       <div class="table-responsive">
 
-        <table
-          class="data-table"
-          id="programSummaryTable">
+        <table class="data-table">
 
           <thead>
 
             <tr>
 
               <th>Program</th>
-
-              <th>Total Students</th>
-
-              <th>Re-Reg Done</th>
-
+              <th>Total</th>
+              <th>Done</th>
               <th>Pending</th>
-
               <th>Re-Reg %</th>
 
               <th>IA Submitted</th>
-
               <th>IA Partial</th>
-
+              <th>IA Full</th>
               <th>IA Nil</th>
-
               <th>IA %</th>
+
+              <th>Exam Attendance %</th>
 
               <th>Status</th>
 
@@ -620,38 +479,12 @@
 
     </section>
 
-    <!-- ===================================================
-         DETAIL TABLE
-    ==================================================== -->
+    <!-- DETAIL TABLE -->
 
     <section class="section-block">
 
-      <div class="section-header-row">
-
-        <div class="section-title">
-
-          <i class="fas fa-list"></i>
-
-          Detailed Student Data
-
-        </div>
-
-        <div
-          class="table-meta"
-          id="tableMeta">
-
-        </div>
-
-        <button
-          class="btn-export"
-          onclick="exportFilteredData()">
-
-          <i class="fas fa-download"></i>
-
-          Export CSV
-
-        </button>
-
+      <div class="section-title">
+        Student Details
       </div>
 
       <div class="table-responsive">
@@ -672,35 +505,11 @@
 
       </div>
 
-      <div
-        class="pagination"
-        id="pagination">
-
-      </div>
-
     </section>
 
   </div>
 
-  <!-- =======================================================
-       FOOTER
-  ======================================================== -->
-
-  <footer class="app-footer">
-
-    <span>
-      Re-Registration Analytics Dashboard © 2025
-    </span>
-
-    <span>
-      Data processed locally in browser
-    </span>
-
-  </footer>
-
-  <!-- =======================================================
-       JAVASCRIPT
-  ======================================================== -->
+  <!-- JS -->
 
   <script src="js/dashboard.js"></script>
 
