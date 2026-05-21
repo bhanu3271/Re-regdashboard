@@ -1,5 +1,5 @@
 /* ============================================================
-   RE-REGISTRATION DASHBOARD — UPDATED FINAL SCRIPT
+   RE-REGISTRATION DASHBOARD — COMPLETE UPDATED SCRIPT
    ============================================================ */
 
 'use strict';
@@ -144,6 +144,7 @@ function parseWorkbook(workbook, fileName) {
     const span = lu.querySelector('span');
 
     if (span) {
+
       span.textContent =
         `Loaded: ${fileName} · ${rawData.length} rows`;
     }
@@ -181,7 +182,6 @@ function pct(num, den) {
 
 /* ============================================================
    RE-REG STATUS
-   LAST COLUMN ONLY
 ============================================================ */
 
 function isReRegDone(row) {
@@ -210,7 +210,6 @@ function isReRegDone(row) {
 
 /* ============================================================
    IA STATUS
-   FROM "Sem 1 IA" COLUMN
 ============================================================ */
 
 function getIAStatus(row) {
@@ -219,22 +218,22 @@ function getIAStatus(row) {
     col.toLowerCase().includes('sem 1 ia')
   );
 
-  if (!iaColumn) return 'Nil Submission';
+  if (!iaColumn)
+    return 'Nil Submission';
 
   const value =
     normalizeVal(row[iaColumn]).toLowerCase();
 
   if (
-    value.includes('submitted')
-    && !value.includes('partial')
-  ) {
-    return 'Submitted';
-  }
-
-  if (
     value.includes('partial')
   ) {
     return 'Partially Submitted';
+  }
+
+  if (
+    value.includes('submitted')
+  ) {
+    return 'Submitted';
   }
 
   return 'Nil Submission';
@@ -252,15 +251,11 @@ function populateFilters() {
   const programSel =
     document.getElementById('filterProgram');
 
-  if (batchSel) {
-    batchSel.innerHTML =
-      '<option value="ALL">All Batches</option>';
-  }
+  batchSel.innerHTML =
+    '<option value="ALL">All Batches</option>';
 
-  if (programSel) {
-    programSel.innerHTML =
-      '<option value="ALL">All Programs</option>';
-  }
+  programSel.innerHTML =
+    '<option value="ALL">All Programs</option>';
 
   const batches = [
     ...new Set(
@@ -406,11 +401,15 @@ function computeStats(data) {
     pct(done, total);
 
   const batchMap = {};
+  const programMap = {};
 
   data.forEach(row => {
 
     const batch =
       normalizeVal(row.Batch) || 'Unknown';
+
+    const program =
+      normalizeVal(row.Program) || 'Unknown';
 
     if (!batchMap[batch]) {
 
@@ -423,25 +422,45 @@ function computeStats(data) {
       };
     }
 
+    if (!programMap[program]) {
+
+      programMap[program] = {
+        total: 0,
+        done: 0,
+        iaSubmitted: 0,
+        iaPartial: 0,
+        iaNil: 0
+      };
+    }
+
     batchMap[batch].total++;
+    programMap[program].total++;
 
     if (isReRegDone(row)) {
+
       batchMap[batch].done++;
+      programMap[program].done++;
     }
 
     const iaStatus =
       getIAStatus(row);
 
     if (iaStatus === 'Submitted') {
+
       batchMap[batch].iaSubmitted++;
+      programMap[program].iaSubmitted++;
     }
     else if (
       iaStatus === 'Partially Submitted'
     ) {
+
       batchMap[batch].iaPartial++;
+      programMap[program].iaPartial++;
     }
     else {
+
       batchMap[batch].iaNil++;
+      programMap[program].iaNil++;
     }
   });
 
@@ -450,7 +469,8 @@ function computeStats(data) {
     done,
     pending,
     percent,
-    batchMap
+    batchMap,
+    programMap
   };
 }
 
@@ -466,6 +486,8 @@ function renderDashboard() {
   renderKPIs(stats);
 
   renderBatchTable(stats.batchMap);
+
+  renderProgramTable(stats.programMap);
 
   renderCharts(stats);
 
@@ -526,8 +548,11 @@ function renderBatchTable(batchMap) {
       const pending =
         data.total - data.done;
 
-      const percent =
+      const reRegPct =
         pct(data.done, data.total);
+
+      const iaPct =
+        pct(data.iaSubmitted, data.total);
 
       html += `
         <tr>
@@ -535,8 +560,55 @@ function renderBatchTable(batchMap) {
           <td>${data.total}</td>
           <td>${data.done}</td>
           <td>${pending}</td>
-          <td>${percent}%</td>
+          <td>${reRegPct}%</td>
           <td>${data.iaSubmitted}</td>
+          <td>${iaPct}%</td>
+          <td>${data.iaPartial}</td>
+          <td>${data.iaNil}</td>
+        </tr>
+      `;
+    }
+  );
+
+  tbody.innerHTML = html;
+}
+
+/* ============================================================
+   PROGRAM TABLE
+============================================================ */
+
+function renderProgramTable(programMap) {
+
+  const tbody =
+    document.getElementById(
+      'programSummaryBody'
+    );
+
+  if (!tbody) return;
+
+  let html = '';
+
+  Object.entries(programMap).forEach(
+    ([program, data]) => {
+
+      const pending =
+        data.total - data.done;
+
+      const reRegPct =
+        pct(data.done, data.total);
+
+      const iaPct =
+        pct(data.iaSubmitted, data.total);
+
+      html += `
+        <tr>
+          <td>${program}</td>
+          <td>${data.total}</td>
+          <td>${data.done}</td>
+          <td>${pending}</td>
+          <td>${reRegPct}%</td>
+          <td>${data.iaSubmitted}</td>
+          <td>${iaPct}%</td>
           <td>${data.iaPartial}</td>
           <td>${data.iaNil}</td>
         </tr>
@@ -580,7 +652,7 @@ function renderCharts(stats) {
         stats.batchMap[b].done
     );
 
-  // PIE
+  // PIE CHART
 
   const pieCanvas =
     document.getElementById(
@@ -613,7 +685,7 @@ function renderCharts(stats) {
     );
   }
 
-  // BAR
+  // BAR CHART
 
   const barCanvas =
     document.getElementById(
@@ -638,16 +710,12 @@ function renderCharts(stats) {
             backgroundColor:
               '#4f46e5'
           }]
-        },
-
-        options: {
-          responsive: true
         }
       }
     );
   }
 
-  // STACKED
+  // STACKED CHART
 
   const stackedCanvas =
     document.getElementById(
@@ -685,8 +753,6 @@ function renderCharts(stats) {
         },
 
         options: {
-          responsive: true,
-
           scales: {
             x: {
               stacked: true
@@ -756,10 +822,6 @@ function renderCharts(stats) {
                 '#ef4444'
             }
           ]
-        },
-
-        options: {
-          responsive: true
         }
       }
     );
