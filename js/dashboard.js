@@ -244,7 +244,7 @@ function pct(num, den) {
 }
 
 /* ============================================================
-   GET VALUE
+   GET VALUE FROM COLUMN
 ============================================================ */
 
 function getValue(row, possibleNames) {
@@ -276,19 +276,30 @@ function getValue(row, possibleNames) {
 
 function isReRegDone(row) {
 
-  const rowText =
-    Object.values(row)
-      .join(' ')
-      .toLowerCase();
+  /* SEARCH SPECIFIC COLUMN */
 
-  return (
-    rowText.includes('done') ||
-    rowText.includes('completed') ||
-    rowText.includes('complete') ||
-    rowText.includes('registered') ||
-    rowText.includes('success') ||
-    rowText.includes('yes')
-  );
+  const value = String(
+    getValue(row, [
+      're-reg',
+      're registration',
+      're-registration',
+      'registration status',
+      'status'
+    ])
+  )
+    .trim()
+    .toLowerCase();
+
+  return [
+    'done',
+    'completed',
+    'complete',
+    'yes',
+    'success',
+    'registered',
+    'true',
+    '1'
+  ].includes(value);
 }
 
 /* ============================================================
@@ -327,27 +338,28 @@ function getIAStatus(row) {
 
 function getExamAttendance(row) {
 
-  const rowText =
-    Object.values(row)
-      .join(' ')
-      .toLowerCase();
+  const value = String(
+    getValue(row, [
+      'exam attendance',
+      'attendance',
+      'exam status',
+      'all papers given'
+    ])
+  )
+    .trim()
+    .toLowerCase();
+
+  /* ATTENDED */
 
   if (
-    rowText.includes('all papers given') ||
-    rowText.includes('attended') ||
-    rowText.includes('present')
+    value === 'all papers given'
   ) {
     return 'PRESENT';
   }
 
-  if (
-    rowText.includes('not attended') ||
-    rowText.includes('absent')
-  ) {
-    return 'ABSENT';
-  }
+  /* NOT ATTENDED */
 
-  return 'UNKNOWN';
+  return 'ABSENT';
 }
 
 /* ============================================================
@@ -358,22 +370,30 @@ function populateFilters() {
 
   populateSelect(
     'filterBatch',
-    getUniqueValues(['batch'])
+    getUniqueValues([
+      'batch'
+    ])
   );
 
   populateSelect(
     'filterProgram',
-    getUniqueValues(['program'])
+    getUniqueValues([
+      'program'
+    ])
   );
 
   populateSelect(
     'filterSource',
-    getUniqueValues(['source'])
+    getUniqueValues([
+      'source'
+    ])
   );
 
   populateSelect(
     'filterSalesType',
-    getUniqueValues(['sales type'])
+    getUniqueValues([
+      'sales type'
+    ])
   );
 
   populateSelect(
@@ -781,9 +801,6 @@ function renderSummaryRow(
       === 'PRESENT'
     ).length;
 
-  const examAttendancePct =
-    pct(examPresent, total);
-
   const tr =
     document.createElement('tr');
 
@@ -824,7 +841,7 @@ function renderSummaryRow(
     </td>
 
     <td>
-      ${examAttendancePct}%
+      ${pct(examPresent, total)}%
     </td>
 
     <td>
@@ -1034,6 +1051,10 @@ function renderCharts() {
               '#ef4444'
             ]
           }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
         }
       }
     );
@@ -1085,7 +1106,7 @@ function renderCharts() {
       );
   }
 
-  /* ATTENDANCE CHART */
+  /* EXAM ATTENDANCE */
 
   const attendanceCanvas =
     el('attendanceChart');
@@ -1108,8 +1129,7 @@ function renderCharts() {
                 '#f59e0b',
               backgroundColor:
                 '#fbbf24',
-              tension: 0.3,
-              fill: false
+              tension: 0.3
             }]
           },
           options: {
