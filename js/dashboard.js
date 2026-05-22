@@ -276,25 +276,43 @@ function getValue(row, possibleNames) {
 
 function isReRegDone(row) {
 
-  const status = String(
+  const statusValue = String(
     getValue(row, [
       're-reg',
-      're registration',
+      'rereg',
       'registration status',
       'status'
     ])
   ).toLowerCase();
 
   if (
-    status.includes('done') ||
-    status.includes('completed') ||
-    status.includes('success') ||
-    status.includes('registered')
+    statusValue.includes('done') ||
+    statusValue.includes('completed') ||
+    statusValue.includes('registered') ||
+    statusValue.includes('success') ||
+    statusValue === 'yes'
   ) {
     return true;
   }
 
-  return false;
+  const values = Object.values(row);
+
+  const lastValue = String(
+    values[values.length - 1] || ''
+  )
+    .trim()
+    .toLowerCase();
+
+  return [
+    'done',
+    'completed',
+    'complete',
+    'yes',
+    'success',
+    'registered',
+    'true',
+    '1'
+  ].includes(lastValue);
 }
 
 /* ============================================================
@@ -333,22 +351,22 @@ function getIAStatus(row) {
 
 function getExamAttendance(row) {
 
-  const value = String(
+  const attendanceValue = String(
     getValue(row, [
       'exam attendance',
-      'attendance',
+      'attendance status',
       'exam status',
       'all papers given',
-      'paper status'
+      'attendance'
     ])
-  ).toLowerCase();
+  ).toLowerCase().trim();
 
   /* PRESENT */
 
   if (
-    value.includes('all papers given') ||
-    value.includes('attended') ||
-    value.includes('present')
+    attendanceValue.includes('all papers given') ||
+    attendanceValue.includes('attended') ||
+    attendanceValue.includes('present')
   ) {
     return 'PRESENT';
   }
@@ -356,8 +374,8 @@ function getExamAttendance(row) {
   /* ABSENT */
 
   if (
-    value.includes('not attended') ||
-    value.includes('absent')
+    attendanceValue.includes('not attended') ||
+    attendanceValue.includes('absent')
   ) {
     return 'ABSENT';
   }
@@ -392,16 +410,11 @@ function populateFilters() {
     ])
   );
 
-  /* SALES TYPE FILTER
-     SHOW ONLY RE-REG DONE / PENDING
-  */
-
   populateSelect(
     'filterSalesType',
-    [
-      'Re-Reg Done',
-      'Pending'
-    ]
+    getUniqueValues([
+      'sales type'
+    ])
   );
 
   populateSelect(
@@ -509,18 +522,9 @@ function applyFilters() {
       return false;
     }
 
-    /* SALES TYPE FILTER */
-
     if (
-      sales === 'Re-Reg Done' &&
-      !isReRegDone(row)
-    ) {
-      return false;
-    }
-
-    if (
-      sales === 'Pending' &&
-      isReRegDone(row)
+      sales !== 'ALL' &&
+      getValue(row, ['sales type']) !== sales
     ) {
       return false;
     }
@@ -818,6 +822,9 @@ function renderSummaryRow(
       === 'PRESENT'
     ).length;
 
+  const examAttendancePct =
+    pct(examPresent, total);
+
   const tr =
     document.createElement('tr');
 
@@ -854,7 +861,7 @@ function renderSummaryRow(
     </td>
 
     <td>
-      ${pct(examPresent, total)}%
+      ${examAttendancePct}%
     </td>
 
     <td>
@@ -1119,7 +1126,7 @@ function renderCharts() {
       );
   }
 
-  /* EXAM ATTENDANCE */
+  /* EXAM ATTENDANCE CHART */
 
   const attendanceCanvas =
     el('examAttendanceChart');
@@ -1160,45 +1167,78 @@ function renderCharts() {
       );
   }
 
-  /* SALES TYPE CHART */
+  /* SALES TYPE RE-REG % */
 
   const salesCanvas =
     el('salesTypeChart');
 
   if (salesCanvas) {
 
-    const done =
-      filteredData.filter(
-        isReRegDone
-      ).length;
+    const salesGroups = {};
 
-    const pending =
-      filteredData.length - done;
+    filteredData.forEach(row => {
+
+      const salesType =
+        getValue(row, [
+          'sales type'
+        ]) || 'Unknown';
+
+      if (!salesGroups[salesType]) {
+
+        salesGroups[salesType] = {
+          total: 0,
+          done: 0
+        };
+      }
+
+      salesGroups[salesType].total++;
+
+      if (isReRegDone(row)) {
+        salesGroups[salesType].done++;
+      }
+    });
+
+    const salesLabels =
+      Object.keys(salesGroups);
+
+    const salesDonePct =
+      salesLabels.map(label => {
+
+        const item =
+          salesGroups[label];
+
+        return pct(
+          item.done,
+          item.total
+        );
+      });
 
     charts.sales =
       new Chart(
         salesCanvas,
         {
-          type: 'pie',
+          type: 'bar',
           data: {
-            labels: [
-              'Re-Reg Done',
-              'Pending'
-            ],
+            labels:
+              salesLabels,
             datasets: [{
-              data: [
-                done,
-                pending
-              ],
-              backgroundColor: [
-                '#8b5cf6',
-                '#ef4444'
-              ]
+              label:
+                'Re-Reg Done %',
+              data:
+                salesDonePct,
+              backgroundColor:
+                '#8b5cf6'
             }]
           },
           options: {
             responsive: true,
-            maintainAspectRatio: false
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100
+              }
+            }
           }
         }
       );
@@ -1216,6 +1256,9 @@ function renderDetailTable() {
 
   const body =
     el('detailTableBody');
+
+  const meta =
+    el('tableMeta');
 
   if (!head || !body) return;
 
@@ -1249,6 +1292,21 @@ function renderDetailTable() {
         </tr>
       `;
     }).join('');
+
+  if (meta) {
+
+    meta.textContent =
+      `Showing ${
+        start + 1
+      } - ${
+        Math.min(
+          end,
+          filteredData.length
+        )
+      } of ${
+        filteredData.length
+      }`;
+  }
 }
 
 /* ============================================================
