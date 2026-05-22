@@ -276,30 +276,36 @@ function getValue(row, possibleNames) {
 
 function isReRegDone(row) {
 
-  /* SEARCH SPECIFIC COLUMN */
+  const rowText =
+    Object.values(row)
+      .join(' ')
+      .toLowerCase();
 
-  const value = String(
-    getValue(row, [
-      're-reg',
-      're registration',
-      're-registration',
-      'registration status',
-      'status'
-    ])
-  )
-    .trim()
-    .toLowerCase();
+  /* DONE VALUES */
 
-  return [
-    'done',
-    'completed',
-    'complete',
-    'yes',
-    'success',
-    'registered',
-    'true',
-    '1'
-  ].includes(value);
+  if (
+    rowText.includes('done') ||
+    rowText.includes('completed') ||
+    rowText.includes('complete') ||
+    rowText.includes('success') ||
+    rowText.includes('registered') ||
+    rowText.includes('re-reg done') ||
+    rowText.includes('rereg done')
+  ) {
+    return true;
+  }
+
+  /* NOT DONE VALUES */
+
+  if (
+    rowText.includes('not done') ||
+    rowText.includes('pending') ||
+    rowText.includes('not completed')
+  ) {
+    return false;
+  }
+
+  return false;
 }
 
 /* ============================================================
@@ -329,7 +335,13 @@ function getIAStatus(row) {
     return 'NIL';
   }
 
-  return 'SUBMITTED';
+  if (
+    iaValue.includes('submitted')
+  ) {
+    return 'SUBMITTED';
+  }
+
+  return 'NIL';
 }
 
 /* ============================================================
@@ -338,26 +350,26 @@ function getIAStatus(row) {
 
 function getExamAttendance(row) {
 
-  const value = String(
-    getValue(row, [
-      'exam attendance',
-      'attendance',
-      'exam status',
-      'all papers given'
-    ])
-  )
-    .trim()
-    .toLowerCase();
+  const rowText =
+    Object.values(row)
+      .join(' ')
+      .toLowerCase();
 
   /* ATTENDED */
 
   if (
-    value === 'all papers given'
+    rowText.includes('all papers given')
   ) {
     return 'PRESENT';
   }
 
   /* NOT ATTENDED */
+
+  if (
+    rowText.includes('not attended')
+  ) {
+    return 'ABSENT';
+  }
 
   return 'ABSENT';
 }
@@ -837,10 +849,6 @@ function renderSummaryRow(
     </td>
 
     <td>
-      ${pct(fullIA, total)}%
-    </td>
-
-    <td>
       ${pct(examPresent, total)}%
     </td>
 
@@ -1163,6 +1171,7 @@ function renderCharts() {
         ]) || 'Unknown';
 
       if (!salesGroups[salesType]) {
+
         salesGroups[salesType] = {
           total: 0,
           done: 0
@@ -1179,7 +1188,7 @@ function renderCharts() {
     const salesLabels =
       Object.keys(salesGroups);
 
-    const salesDonePct =
+    const salesPercentages =
       salesLabels.map(label => {
 
         const item =
@@ -1203,7 +1212,7 @@ function renderCharts() {
               label:
                 'Re-Reg Done %',
               data:
-                salesDonePct,
+                salesPercentages,
               backgroundColor:
                 '#8b5cf6'
             }]
