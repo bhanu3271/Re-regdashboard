@@ -251,16 +251,20 @@ function getValue(row, possibleNames) {
 
   for (const key of Object.keys(row)) {
 
-    const lowerKey =
-      key.toLowerCase().replace(/\s+/g, '');
+    const cleanKey =
+      key.toLowerCase()
+      .replace(/\s+/g, '')
+      .replace(/[^a-z0-9]/g, '');
 
     for (const name of possibleNames) {
 
-      const lowerName =
-        name.toLowerCase().replace(/\s+/g, '');
+      const cleanName =
+        name.toLowerCase()
+        .replace(/\s+/g, '')
+        .replace(/[^a-z0-9]/g, '');
 
       if (
-        lowerKey.includes(lowerName)
+        cleanKey.includes(cleanName)
       ) {
 
         return normalizeVal(row[key]);
@@ -280,9 +284,9 @@ function isReRegDone(row) {
   const value = String(
     getValue(row, [
       'Sem 2 Re-reg done',
+      'Sem2Reregdone',
       're-reg done',
-      're registration',
-      'rereg'
+      'reregdone'
     ])
   ).trim().toLowerCase();
 
@@ -336,13 +340,9 @@ function getExamAttendance(row) {
     ])
   ).trim().toLowerCase();
 
-  if (
+  return (
     value === 'attended'
-  ) {
-    return 'PRESENT';
-  }
-
-  return 'ABSENT';
+  );
 }
 
 /* ============================================================
@@ -353,30 +353,22 @@ function populateFilters() {
 
   populateSelect(
     'filterBatch',
-    getUniqueValues([
-      'batch'
-    ])
+    getUniqueValues(['batch'])
   );
 
   populateSelect(
     'filterProgram',
-    getUniqueValues([
-      'program'
-    ])
+    getUniqueValues(['program'])
   );
 
   populateSelect(
     'filterSource',
-    getUniqueValues([
-      'source'
-    ])
+    getUniqueValues(['source'])
   );
 
   populateSelect(
     'filterSalesType',
-    getUniqueValues([
-      'sales type'
-    ])
+    getUniqueValues(['sales type'])
   );
 
   populateSelect(
@@ -617,7 +609,6 @@ function renderKPIs() {
   const examPresent =
     filteredData.filter(r =>
       getExamAttendance(r)
-      === 'PRESENT'
     ).length;
 
   const grid = el('kpiGrid');
@@ -781,7 +772,6 @@ function renderSummaryRow(
   const examPresent =
     rows.filter(r =>
       getExamAttendance(r)
-      === 'PRESENT'
     ).length;
 
   const tr =
@@ -906,7 +896,6 @@ function renderCharts() {
     const present =
       rows.filter(r =>
         getExamAttendance(r)
-        === 'PRESENT'
       ).length;
 
     reRegData.push(
@@ -927,6 +916,8 @@ function renderCharts() {
       total - done
     );
   });
+
+  /* RE-REG BAR */
 
   const reRegCanvas =
     el('reRegBarChart');
@@ -960,6 +951,8 @@ function renderCharts() {
     );
   }
 
+  /* IA BAR */
+
   const iaCanvas =
     el('iaBarChart');
 
@@ -992,6 +985,97 @@ function renderCharts() {
     );
   }
 
+  /* PIE */
+
+  const pieCanvas =
+    el('reRegPieChart');
+
+  if (pieCanvas) {
+
+    const done =
+      filteredData.filter(
+        isReRegDone
+      ).length;
+
+    const pending =
+      filteredData.length - done;
+
+    charts.pie = new Chart(
+      pieCanvas,
+      {
+        type: 'doughnut',
+        data: {
+          labels: [
+            'Done',
+            'Pending'
+          ],
+          datasets: [{
+            data: [
+              done,
+              pending
+            ],
+            backgroundColor: [
+              '#10b981',
+              '#ef4444'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      }
+    );
+  }
+
+  /* STACKED BAR */
+
+  const stackedCanvas =
+    el('stackedBarChart');
+
+  if (stackedCanvas) {
+
+    charts.stacked =
+      new Chart(
+        stackedCanvas,
+        {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: 'Done',
+                data: doneData,
+                backgroundColor:
+                  '#10b981'
+              },
+              {
+                label: 'Pending',
+                data: pendingData,
+                backgroundColor:
+                  '#ef4444'
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                stacked: true
+              },
+              y: {
+                stacked: true,
+                beginAtZero: true
+              }
+            }
+          }
+        }
+      );
+  }
+
+  /* ATTENDANCE */
+
   const attendanceCanvas =
     el('attendanceChart');
 
@@ -1013,7 +1097,8 @@ function renderCharts() {
                 '#f59e0b',
               backgroundColor:
                 '#fbbf24',
-              tension: 0.3
+              tension: 0.3,
+              fill: false
             }]
           },
           options: {
@@ -1029,4 +1114,144 @@ function renderCharts() {
         }
       );
   }
+
+  /* SALES TYPE CHART */
+
+  const salesCanvas =
+    el('salesTypeChart');
+
+  if (salesCanvas) {
+
+    const salesGroups = {};
+
+    filteredData.forEach(row => {
+
+      const salesType =
+        getValue(row, [
+          'sales type'
+        ]) || 'Unknown';
+
+      if (!salesGroups[salesType]) {
+
+        salesGroups[salesType] = {
+          total: 0,
+          done: 0
+        };
+      }
+
+      salesGroups[salesType].total++;
+
+      if (isReRegDone(row)) {
+        salesGroups[salesType].done++;
+      }
+    });
+
+    const salesLabels =
+      Object.keys(salesGroups);
+
+    const salesData =
+      salesLabels.map(label => {
+
+        const item =
+          salesGroups[label];
+
+        return pct(
+          item.done,
+          item.total
+        );
+      });
+
+    charts.sales =
+      new Chart(
+        salesCanvas,
+        {
+          type: 'bar',
+          data: {
+            labels:
+              salesLabels,
+            datasets: [{
+              label:
+                'Re-Reg Done %',
+              data:
+                salesData,
+              backgroundColor:
+                '#8b5cf6'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100
+              }
+            }
+          }
+        }
+      );
+  }
+}
+
+/* ============================================================
+   DETAIL TABLE
+============================================================ */
+
+function renderDetailTable() {
+
+  const head =
+    el('detailTableHead');
+
+  const body =
+    el('detailTableBody');
+
+  if (!head || !body) return;
+
+  head.innerHTML =
+    '<tr>' +
+    allColumns.map(col =>
+      `<th>${col}</th>`
+    ).join('') +
+    '</tr>';
+
+  const start =
+    (currentPage - 1)
+    * PAGE_SIZE;
+
+  const end =
+    start + PAGE_SIZE;
+
+  const pageData =
+    filteredData.slice(start, end);
+
+  body.innerHTML =
+    pageData.map(row => {
+
+      return `
+        <tr>
+          ${allColumns.map(col => `
+            <td>
+              ${normalizeVal(row[col])}
+            </td>
+          `).join('')}
+        </tr>
+      `;
+    }).join('');
+}
+
+/* ============================================================
+   LOADING
+============================================================ */
+
+function showLoading(show) {
+
+  const loading =
+    el('loadingScreen');
+
+  if (!loading) return;
+
+  loading.classList.toggle(
+    'hidden',
+    !show
+  );
 }
