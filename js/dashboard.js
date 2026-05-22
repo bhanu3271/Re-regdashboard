@@ -1,3 +1,4 @@
+```javascript
 'use strict';
 
 /* ============================================================
@@ -336,17 +337,31 @@ function getExamAttendance(row) {
     getValue(row, [
       'exam attendance',
       'attendance',
-      'exam status'
+      'exam status',
+      'all papers given'
     ])
   ).toLowerCase();
 
+  /* PRESENT */
+
   if (
+    value.includes('all papers given') ||
+    value.includes('attended') ||
+    value.includes('present')
+  ) {
+    return 'PRESENT';
+  }
+
+  /* ABSENT */
+
+  if (
+    value.includes('not attended') ||
     value.includes('absent')
   ) {
     return 'ABSENT';
   }
 
-  return 'PRESENT';
+  return 'UNKNOWN';
 }
 
 /* ============================================================
@@ -618,6 +633,12 @@ function renderKPIs() {
   const pending =
     total - done;
 
+  const examPresent =
+    filteredData.filter(r =>
+      getExamAttendance(r)
+      === 'PRESENT'
+    ).length;
+
   const grid = el('kpiGrid');
 
   if (!grid) return;
@@ -653,10 +674,10 @@ function renderKPIs() {
 
     <div class="kpi-card">
       <div class="kpi-label">
-        Completion %
+        Exam Attendance %
       </div>
       <div class="kpi-value">
-        ${pct(done, total)}%
+        ${pct(examPresent, total)}%
       </div>
     </div>
   `;
@@ -776,6 +797,12 @@ function renderSummaryRow(
   const fullIA =
     submitted + partial;
 
+  const examPresent =
+    rows.filter(r =>
+      getExamAttendance(r)
+      === 'PRESENT'
+    ).length;
+
   const tr =
     document.createElement('tr');
 
@@ -812,7 +839,7 @@ function renderSummaryRow(
     </td>
 
     <td>
-      ${pct(fullIA, total)}%
+      ${pct(examPresent, total)}%
     </td>
 
     <td>
@@ -954,7 +981,7 @@ function renderCharts() {
     );
   }
 
-  /* IA BAR */
+  /* IA FULL BAR */
 
   const iaCanvas =
     el('iaBarChart');
@@ -1077,7 +1104,7 @@ function renderCharts() {
       );
   }
 
-  /* EXAM ATTENDANCE */
+  /* EXAM ATTENDANCE CHART */
 
   const attendanceCanvas =
     el('attendanceChart');
@@ -1099,7 +1126,9 @@ function renderCharts() {
               borderColor:
                 '#f59e0b',
               backgroundColor:
-                '#fbbf24'
+                '#fbbf24',
+              tension: 0.3,
+              fill: false
             }]
           },
           options: {
@@ -1116,7 +1145,9 @@ function renderCharts() {
       );
   }
 
-  /* SALES TYPE */
+  /* SALES TYPE CHART
+     SHOWING RE-REG DONE %
+  */
 
   const salesCanvas =
     el('salesTypeChart');
@@ -1133,32 +1164,60 @@ function renderCharts() {
         ]) || 'Unknown';
 
       if (!salesGroups[salesType]) {
-        salesGroups[salesType] = 0;
+        salesGroups[salesType] = {
+          total: 0,
+          done: 0
+        };
       }
 
-      salesGroups[salesType]++;
+      salesGroups[salesType].total++;
+
+      if (isReRegDone(row)) {
+        salesGroups[salesType].done++;
+      }
     });
+
+    const salesLabels =
+      Object.keys(salesGroups);
+
+    const salesDonePct =
+      salesLabels.map(label => {
+
+        const item =
+          salesGroups[label];
+
+        return pct(
+          item.done,
+          item.total
+        );
+      });
 
     charts.sales =
       new Chart(
         salesCanvas,
         {
-          type: 'pie',
+          type: 'bar',
           data: {
             labels:
-              Object.keys(
-                salesGroups
-              ),
+              salesLabels,
             datasets: [{
+              label:
+                'Re-Reg Done %',
               data:
-                Object.values(
-                  salesGroups
-                )
+                salesDonePct,
+              backgroundColor:
+                '#8b5cf6'
             }]
           },
           options: {
             responsive: true,
-            maintainAspectRatio: false
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100
+              }
+            }
           }
         }
       );
@@ -1271,3 +1330,4 @@ function showLoading(show) {
     !show
   );
 }
+```
