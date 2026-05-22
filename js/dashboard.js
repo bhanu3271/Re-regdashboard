@@ -1,4 +1,3 @@
-```javascript
 'use strict';
 
 /* ============================================================
@@ -277,24 +276,25 @@ function getValue(row, possibleNames) {
 
 function isReRegDone(row) {
 
-  const values = Object.values(row);
+  const status = String(
+    getValue(row, [
+      're-reg',
+      're registration',
+      'registration status',
+      'status'
+    ])
+  ).toLowerCase();
 
-  const lastValue = String(
-    values[values.length - 1] || ''
-  )
-    .trim()
-    .toLowerCase();
+  if (
+    status.includes('done') ||
+    status.includes('completed') ||
+    status.includes('success') ||
+    status.includes('registered')
+  ) {
+    return true;
+  }
 
-  return [
-    'done',
-    'completed',
-    'complete',
-    'yes',
-    'success',
-    'registered',
-    'true',
-    '1'
-  ].includes(lastValue);
+  return false;
 }
 
 /* ============================================================
@@ -338,7 +338,8 @@ function getExamAttendance(row) {
       'exam attendance',
       'attendance',
       'exam status',
-      'all papers given'
+      'all papers given',
+      'paper status'
     ])
   ).toLowerCase();
 
@@ -391,11 +392,16 @@ function populateFilters() {
     ])
   );
 
+  /* SALES TYPE FILTER
+     SHOW ONLY RE-REG DONE / PENDING
+  */
+
   populateSelect(
     'filterSalesType',
-    getUniqueValues([
-      'sales type'
-    ])
+    [
+      'Re-Reg Done',
+      'Pending'
+    ]
   );
 
   populateSelect(
@@ -503,9 +509,18 @@ function applyFilters() {
       return false;
     }
 
+    /* SALES TYPE FILTER */
+
     if (
-      sales !== 'ALL' &&
-      getValue(row, ['sales type']) !== sales
+      sales === 'Re-Reg Done' &&
+      !isReRegDone(row)
+    ) {
+      return false;
+    }
+
+    if (
+      sales === 'Pending' &&
+      isReRegDone(row)
     ) {
       return false;
     }
@@ -981,7 +996,7 @@ function renderCharts() {
     );
   }
 
-  /* IA FULL BAR */
+  /* IA BAR */
 
   const iaCanvas =
     el('iaBarChart');
@@ -1104,10 +1119,10 @@ function renderCharts() {
       );
   }
 
-  /* EXAM ATTENDANCE CHART */
+  /* EXAM ATTENDANCE */
 
   const attendanceCanvas =
-    el('attendanceChart');
+    el('examAttendanceChart');
 
   if (attendanceCanvas) {
 
@@ -1145,79 +1160,45 @@ function renderCharts() {
       );
   }
 
-  /* SALES TYPE CHART
-     SHOWING RE-REG DONE %
-  */
+  /* SALES TYPE CHART */
 
   const salesCanvas =
     el('salesTypeChart');
 
   if (salesCanvas) {
 
-    const salesGroups = {};
+    const done =
+      filteredData.filter(
+        isReRegDone
+      ).length;
 
-    filteredData.forEach(row => {
-
-      const salesType =
-        getValue(row, [
-          'sales type'
-        ]) || 'Unknown';
-
-      if (!salesGroups[salesType]) {
-        salesGroups[salesType] = {
-          total: 0,
-          done: 0
-        };
-      }
-
-      salesGroups[salesType].total++;
-
-      if (isReRegDone(row)) {
-        salesGroups[salesType].done++;
-      }
-    });
-
-    const salesLabels =
-      Object.keys(salesGroups);
-
-    const salesDonePct =
-      salesLabels.map(label => {
-
-        const item =
-          salesGroups[label];
-
-        return pct(
-          item.done,
-          item.total
-        );
-      });
+    const pending =
+      filteredData.length - done;
 
     charts.sales =
       new Chart(
         salesCanvas,
         {
-          type: 'bar',
+          type: 'pie',
           data: {
-            labels:
-              salesLabels,
+            labels: [
+              'Re-Reg Done',
+              'Pending'
+            ],
             datasets: [{
-              label:
-                'Re-Reg Done %',
-              data:
-                salesDonePct,
-              backgroundColor:
-                '#8b5cf6'
+              data: [
+                done,
+                pending
+              ],
+              backgroundColor: [
+                '#8b5cf6',
+                '#ef4444'
+              ]
             }]
           },
           options: {
             responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: {
-                beginAtZero: true,
-                max: 100
-              }
-            }
+            maintainAspectRatio: false
           }
         }
       );
@@ -1235,9 +1216,6 @@ function renderDetailTable() {
 
   const body =
     el('detailTableBody');
-
-  const meta =
-    el('tableMeta');
 
   if (!head || !body) return;
 
@@ -1271,21 +1249,6 @@ function renderDetailTable() {
         </tr>
       `;
     }).join('');
-
-  if (meta) {
-
-    meta.textContent =
-      `Showing ${
-        start + 1
-      } - ${
-        Math.min(
-          end,
-          filteredData.length
-        )
-      } of ${
-        filteredData.length
-      }`;
-  }
 }
 
 /* ============================================================
