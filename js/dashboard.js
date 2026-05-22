@@ -244,7 +244,7 @@ function pct(num, den) {
 }
 
 /* ============================================================
-   GET VALUE FROM COLUMN
+   GET VALUE
 ============================================================ */
 
 function getValue(row, possibleNames) {
@@ -276,43 +276,19 @@ function getValue(row, possibleNames) {
 
 function isReRegDone(row) {
 
-  const statusValue = String(
-    getValue(row, [
-      're-reg',
-      'rereg',
-      'registration status',
-      'status'
-    ])
-  ).toLowerCase();
+  const rowText =
+    Object.values(row)
+      .join(' ')
+      .toLowerCase();
 
-  if (
-    statusValue.includes('done') ||
-    statusValue.includes('completed') ||
-    statusValue.includes('registered') ||
-    statusValue.includes('success') ||
-    statusValue === 'yes'
-  ) {
-    return true;
-  }
-
-  const values = Object.values(row);
-
-  const lastValue = String(
-    values[values.length - 1] || ''
-  )
-    .trim()
-    .toLowerCase();
-
-  return [
-    'done',
-    'completed',
-    'complete',
-    'yes',
-    'success',
-    'registered',
-    'true',
-    '1'
-  ].includes(lastValue);
+  return (
+    rowText.includes('done') ||
+    rowText.includes('completed') ||
+    rowText.includes('complete') ||
+    rowText.includes('registered') ||
+    rowText.includes('success') ||
+    rowText.includes('yes')
+  );
 }
 
 /* ============================================================
@@ -351,31 +327,22 @@ function getIAStatus(row) {
 
 function getExamAttendance(row) {
 
-  const attendanceValue = String(
-    getValue(row, [
-      'exam attendance',
-      'attendance status',
-      'exam status',
-      'all papers given',
-      'attendance'
-    ])
-  ).toLowerCase().trim();
-
-  /* PRESENT */
+  const rowText =
+    Object.values(row)
+      .join(' ')
+      .toLowerCase();
 
   if (
-    attendanceValue.includes('all papers given') ||
-    attendanceValue.includes('attended') ||
-    attendanceValue.includes('present')
+    rowText.includes('all papers given') ||
+    rowText.includes('attended') ||
+    rowText.includes('present')
   ) {
     return 'PRESENT';
   }
 
-  /* ABSENT */
-
   if (
-    attendanceValue.includes('not attended') ||
-    attendanceValue.includes('absent')
+    rowText.includes('not attended') ||
+    rowText.includes('absent')
   ) {
     return 'ABSENT';
   }
@@ -391,30 +358,22 @@ function populateFilters() {
 
   populateSelect(
     'filterBatch',
-    getUniqueValues([
-      'batch'
-    ])
+    getUniqueValues(['batch'])
   );
 
   populateSelect(
     'filterProgram',
-    getUniqueValues([
-      'program'
-    ])
+    getUniqueValues(['program'])
   );
 
   populateSelect(
     'filterSource',
-    getUniqueValues([
-      'source'
-    ])
+    getUniqueValues(['source'])
   );
 
   populateSelect(
     'filterSalesType',
-    getUniqueValues([
-      'sales type'
-    ])
+    getUniqueValues(['sales type'])
   );
 
   populateSelect(
@@ -861,6 +820,10 @@ function renderSummaryRow(
     </td>
 
     <td>
+      ${pct(fullIA, total)}%
+    </td>
+
+    <td>
       ${examAttendancePct}%
     </td>
 
@@ -1071,10 +1034,6 @@ function renderCharts() {
               '#ef4444'
             ]
           }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false
         }
       }
     );
@@ -1126,10 +1085,10 @@ function renderCharts() {
       );
   }
 
-  /* EXAM ATTENDANCE CHART */
+  /* ATTENDANCE CHART */
 
   const attendanceCanvas =
-    el('examAttendanceChart');
+    el('attendanceChart');
 
   if (attendanceCanvas) {
 
@@ -1167,7 +1126,7 @@ function renderCharts() {
       );
   }
 
-  /* SALES TYPE RE-REG % */
+  /* SALES TYPE */
 
   const salesCanvas =
     el('salesTypeChart');
@@ -1184,7 +1143,6 @@ function renderCharts() {
         ]) || 'Unknown';
 
       if (!salesGroups[salesType]) {
-
         salesGroups[salesType] = {
           total: 0,
           done: 0
@@ -1257,9 +1215,6 @@ function renderDetailTable() {
   const body =
     el('detailTableBody');
 
-  const meta =
-    el('tableMeta');
-
   if (!head || !body) return;
 
   head.innerHTML =
@@ -1292,21 +1247,6 @@ function renderDetailTable() {
         </tr>
       `;
     }).join('');
-
-  if (meta) {
-
-    meta.textContent =
-      `Showing ${
-        start + 1
-      } - ${
-        Math.min(
-          end,
-          filteredData.length
-        )
-      } of ${
-        filteredData.length
-      }`;
-  }
 }
 
 /* ============================================================
