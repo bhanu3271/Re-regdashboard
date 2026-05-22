@@ -252,14 +252,15 @@ function getValue(row, possibleNames) {
   for (const key of Object.keys(row)) {
 
     const lowerKey =
-      key.toLowerCase().trim();
+      key.toLowerCase().replace(/\s+/g, '');
 
     for (const name of possibleNames) {
 
+      const lowerName =
+        name.toLowerCase().replace(/\s+/g, '');
+
       if (
-        lowerKey.includes(
-          name.toLowerCase()
-        )
+        lowerKey.includes(lowerName)
       ) {
 
         return normalizeVal(row[key]);
@@ -272,21 +273,22 @@ function getValue(row, possibleNames) {
 
 /* ============================================================
    RE-REG STATUS
-   COLUMN:
-   "Sem 2 Re-reg done"
 ============================================================ */
 
 function isReRegDone(row) {
 
   const value = String(
     getValue(row, [
-      'sem 2 re-reg done',
+      'Sem 2 Re-reg done',
       're-reg done',
-      're registration done'
+      're registration',
+      'rereg'
     ])
   ).trim().toLowerCase();
 
-  return value === 'done';
+  return (
+    value === 'done'
+  );
 }
 
 /* ============================================================
@@ -321,18 +323,14 @@ function getIAStatus(row) {
 
 /* ============================================================
    EXAM ATTENDANCE
-   COLUMN:
-   "Sem 1 Examstatus"
-
-   Attended = PRESENT
 ============================================================ */
 
 function getExamAttendance(row) {
 
   const value = String(
     getValue(row, [
-      'sem 1 examstatus',
-      'sem 1 exam status',
+      'Sem 1 Examstatus',
+      'Sem 1 Exam Status',
       'examstatus',
       'exam status'
     ])
@@ -786,9 +784,6 @@ function renderSummaryRow(
       === 'PRESENT'
     ).length;
 
-  const examAttendancePct =
-    pct(examPresent, total);
-
   const tr =
     document.createElement('tr');
 
@@ -825,7 +820,7 @@ function renderSummaryRow(
     </td>
 
     <td>
-      ${examAttendancePct}%
+      ${pct(examPresent, total)}%
     </td>
 
     <td>
@@ -933,8 +928,6 @@ function renderCharts() {
     );
   });
 
-  /* RE-REG BAR */
-
   const reRegCanvas =
     el('reRegBarChart');
 
@@ -966,8 +959,6 @@ function renderCharts() {
       }
     );
   }
-
-  /* IA BAR */
 
   const iaCanvas =
     el('iaBarChart');
@@ -1001,97 +992,6 @@ function renderCharts() {
     );
   }
 
-  /* PIE */
-
-  const pieCanvas =
-    el('reRegPieChart');
-
-  if (pieCanvas) {
-
-    const done =
-      filteredData.filter(
-        isReRegDone
-      ).length;
-
-    const pending =
-      filteredData.length - done;
-
-    charts.pie = new Chart(
-      pieCanvas,
-      {
-        type: 'doughnut',
-        data: {
-          labels: [
-            'Done',
-            'Pending'
-          ],
-          datasets: [{
-            data: [
-              done,
-              pending
-            ],
-            backgroundColor: [
-              '#10b981',
-              '#ef4444'
-            ]
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false
-        }
-      }
-    );
-  }
-
-  /* STACKED */
-
-  const stackedCanvas =
-    el('stackedBarChart');
-
-  if (stackedCanvas) {
-
-    charts.stacked =
-      new Chart(
-        stackedCanvas,
-        {
-          type: 'bar',
-          data: {
-            labels,
-            datasets: [
-              {
-                label: 'Done',
-                data: doneData,
-                backgroundColor:
-                  '#10b981'
-              },
-              {
-                label: 'Pending',
-                data: pendingData,
-                backgroundColor:
-                  '#ef4444'
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              x: {
-                stacked: true
-              },
-              y: {
-                stacked: true,
-                beginAtZero: true
-              }
-            }
-          }
-        }
-      );
-  }
-
-  /* EXAM ATTENDANCE */
-
   const attendanceCanvas =
     el('attendanceChart');
 
@@ -1113,8 +1013,7 @@ function renderCharts() {
                 '#f59e0b',
               backgroundColor:
                 '#fbbf24',
-              tension: 0.3,
-              fill: false
+              tension: 0.3
             }]
           },
           options: {
@@ -1130,187 +1029,4 @@ function renderCharts() {
         }
       );
   }
-
-  /* SALES TYPE CHART */
-
-  const salesCanvas =
-    el('salesTypeChart');
-
-  if (salesCanvas) {
-
-    const salesGroups = {};
-
-    filteredData.forEach(row => {
-
-      const salesType =
-        getValue(row, [
-          'sales type'
-        ]) || 'Unknown';
-
-      if (!salesGroups[salesType]) {
-        salesGroups[salesType] = {
-          total: 0,
-          done: 0
-        };
-      }
-
-      salesGroups[salesType].total++;
-
-      if (isReRegDone(row)) {
-        salesGroups[salesType].done++;
-      }
-    });
-
-    const salesLabels =
-      Object.keys(salesGroups);
-
-    const salesDonePct =
-      salesLabels.map(label => {
-
-        const item =
-          salesGroups[label];
-
-        return pct(
-          item.done,
-          item.total
-        );
-      });
-
-    charts.sales =
-      new Chart(
-        salesCanvas,
-        {
-          type: 'bar',
-          data: {
-            labels:
-              salesLabels,
-            datasets: [{
-              label:
-                'Re-Reg Done %',
-              data:
-                salesDonePct,
-              backgroundColor:
-                '#8b5cf6'
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: {
-                beginAtZero: true,
-                max: 100
-              }
-            }
-          }
-        }
-      );
-  }
-}
-
-/* ============================================================
-   DETAIL TABLE
-============================================================ */
-
-function renderDetailTable() {
-
-  const head =
-    el('detailTableHead');
-
-  const body =
-    el('detailTableBody');
-
-  const meta =
-    el('tableMeta');
-
-  if (!head || !body) return;
-
-  head.innerHTML =
-    '<tr>' +
-    allColumns.map(col =>
-      `<th>${col}</th>`
-    ).join('') +
-    '</tr>';
-
-  const start =
-    (currentPage - 1)
-    * PAGE_SIZE;
-
-  const end =
-    start + PAGE_SIZE;
-
-  const pageData =
-    filteredData.slice(start, end);
-
-  body.innerHTML =
-    pageData.map(row => {
-
-      return `
-        <tr>
-          ${allColumns.map(col => `
-            <td>
-              ${normalizeVal(row[col])}
-            </td>
-          `).join('')}
-        </tr>
-      `;
-    }).join('');
-
-  if (meta) {
-
-    meta.textContent =
-      `Showing ${
-        start + 1
-      } - ${
-        Math.min(
-          end,
-          filteredData.length
-        )
-      } of ${
-        filteredData.length
-      }`;
-  }
-}
-
-/* ============================================================
-   EXPORT
-============================================================ */
-
-function exportFilteredData() {
-
-  const ws =
-    XLSX.utils.json_to_sheet(
-      filteredData
-    );
-
-  const wb =
-    XLSX.utils.book_new();
-
-  XLSX.utils.book_append_sheet(
-    wb,
-    ws,
-    'Filtered Data'
-  );
-
-  XLSX.writeFile(
-    wb,
-    'Filtered_Data.xlsx'
-  );
-}
-
-/* ============================================================
-   LOADING
-============================================================ */
-
-function showLoading(show) {
-
-  const loading =
-    el('loadingScreen');
-
-  if (!loading) return;
-
-  loading.classList.toggle(
-    'hidden',
-    !show
-  );
 }
