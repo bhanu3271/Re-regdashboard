@@ -282,15 +282,11 @@ function isReRegDone(row) {
     getValue(row, [
       'sem 2 re-reg done',
       're-reg done',
-      're reg done'
+      're registration done'
     ])
-  )
-  .trim()
-  .toLowerCase();
+  ).trim().toLowerCase();
 
-  return (
-    value === 'done'
-  );
+  return value === 'done';
 }
 
 /* ============================================================
@@ -326,29 +322,27 @@ function getIAStatus(row) {
 /* ============================================================
    EXAM ATTENDANCE
    COLUMN:
-   "Sem 1 exam status"
+   "Sem 1 Examstatus"
+
+   Attended = PRESENT
 ============================================================ */
 
 function getExamAttendance(row) {
 
   const value = String(
     getValue(row, [
+      'sem 1 examstatus',
       'sem 1 exam status',
+      'examstatus',
       'exam status'
     ])
-  )
-  .trim()
-  .toLowerCase();
-
-  /* ATTENDED */
+  ).trim().toLowerCase();
 
   if (
     value === 'attended'
   ) {
     return 'PRESENT';
   }
-
-  /* NOT ATTENDED */
 
   return 'ABSENT';
 }
@@ -792,6 +786,9 @@ function renderSummaryRow(
       === 'PRESENT'
     ).length;
 
+  const examAttendancePct =
+    pct(examPresent, total);
+
   const tr =
     document.createElement('tr');
 
@@ -828,7 +825,7 @@ function renderSummaryRow(
     </td>
 
     <td>
-      ${pct(examPresent, total)}%
+      ${examAttendancePct}%
     </td>
 
     <td>
@@ -1093,7 +1090,7 @@ function renderCharts() {
       );
   }
 
-  /* ATTENDANCE CHART */
+  /* EXAM ATTENDANCE */
 
   const attendanceCanvas =
     el('attendanceChart');
@@ -1116,7 +1113,8 @@ function renderCharts() {
                 '#f59e0b',
               backgroundColor:
                 '#fbbf24',
-              tension: 0.3
+              tension: 0.3,
+              fill: false
             }]
           },
           options: {
@@ -1133,7 +1131,7 @@ function renderCharts() {
       );
   }
 
-  /* SALES TYPE */
+  /* SALES TYPE CHART */
 
   const salesCanvas =
     el('salesTypeChart');
@@ -1222,6 +1220,9 @@ function renderDetailTable() {
   const body =
     el('detailTableBody');
 
+  const meta =
+    el('tableMeta');
+
   if (!head || !body) return;
 
   head.innerHTML =
@@ -1254,6 +1255,21 @@ function renderDetailTable() {
         </tr>
       `;
     }).join('');
+
+  if (meta) {
+
+    meta.textContent =
+      `Showing ${
+        start + 1
+      } - ${
+        Math.min(
+          end,
+          filteredData.length
+        )
+      } of ${
+        filteredData.length
+      }`;
+  }
 }
 
 /* ============================================================
