@@ -1330,4 +1330,3 @@ function showLoading(show) {
     !show
   );
 }
-```
